@@ -121,13 +121,28 @@ describe('flags', () => {
   });
 
   it('refreshes updated_at when a row changes', async () => {
-    const flag = await insertFlag(project.projectId, 'touch-me');
+    const past = new Date('2026-01-01T00:00:00.000Z');
+    const [flag] = await db
+      .insert(flags)
+      .values({
+        projectId: project.projectId,
+        key: 'touch-me',
+        type: 'boolean',
+        defaultValue: false,
+        salt: 'salt-touch-me',
+        createdAt: past,
+        updatedAt: past,
+      })
+      .returning();
+    if (flag === undefined) throw new Error('flag not inserted');
+
     const [updated] = await db
       .update(flags)
       .set({ defaultValue: true })
       .where(eq(flags.id, flag.id))
       .returning();
-    expect(updated?.updatedAt.getTime()).toBeGreaterThan(flag.updatedAt.getTime());
+    expect(updated?.createdAt).toEqual(past);
+    expect(updated?.updatedAt.getTime()).toBeGreaterThan(past.getTime());
   });
 });
 
