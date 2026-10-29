@@ -5,3 +5,12 @@ packages:
 
 # Only install versions published at least two weeks ago (in minutes).
 minimumReleaseAge: 20160
+
+# Dependency build scripts are denied unless listed as true here.
+# esbuild ships its binary as an optional dependency; ssh2 and cpu-features are optional
+# native add-ons of the Docker client used by Testcontainers.
+allowBuilds:
+  cpu-features: false
+  esbuild: false
+  protobufjs: false
+  ssh2: false
