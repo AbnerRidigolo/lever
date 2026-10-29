@@ -1,6 +1,7 @@
 export * from './audit.js';
 export * from './common.js';
 export * from './config.js';
+export * from './config-change.js';
 export * from './env.js';
 export * from './errors.js';
 export * from './evaluate.js';
