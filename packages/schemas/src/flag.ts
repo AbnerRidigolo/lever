@@ -8,12 +8,15 @@ export type FlagType = z.infer<typeof flagTypeSchema>;
 
 export const MAX_FLAG_STRING_LENGTH = 10_000;
 
+/** Value of a `json` flag: an object or an array. Scalars have their own flag types. */
+export const jsonFlagValueSchema = z.union([z.record(z.string(), z.json()), z.array(z.json())]);
+
 /** Schema of a flag value for each flag type (AC-1.4). */
 export const flagValueSchemas = {
   boolean: z.boolean(),
   string: z.string().max(MAX_FLAG_STRING_LENGTH),
   number: z.number(),
-  json: z.json(),
+  json: jsonFlagValueSchema,
 } as const satisfies Record<FlagType, z.ZodType>;
 
 export type FlagValueByType = { [T in FlagType]: z.infer<(typeof flagValueSchemas)[T]> };

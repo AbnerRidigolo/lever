@@ -12,14 +12,15 @@ const validValues = {
   boolean: [true, false],
   string: ['', 'blue', 'a'.repeat(10_000)],
   number: [0, -1, 3.14, 1e9],
-  json: [{ title: 'Black Friday', items: [1, 2] }, [1, 'a'], null, 'text', 42],
+  json: [{ title: 'Black Friday', items: [1, 2] }, [1, 'a'], {}, [], { nested: { ok: null } }],
 } as const;
 
 const invalidValues = {
   boolean: ['true', 1, null, {}],
   string: [1, true, null, { a: 1 }, 'a'.repeat(10_001)],
   number: ['1', true, null, Number.NaN, Number.POSITIVE_INFINITY],
-  json: [undefined, () => 1, new Date(0), Number.NaN],
+  // A JSON flag is an object or an array; scalars have their own flag types.
+  json: [null, 'text', 42, true, undefined, () => 1, new Date(0), { a: Number.NaN }],
 } as const;
 
 describe('flag values', () => {
