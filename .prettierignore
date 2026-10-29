@@ -1,0 +1,10 @@
+pnpm-lock.yaml
+**/dist/
+**/coverage/
+**/.turbo/
+**/migrations/meta/
+
+# documents written by the author: keep their formatting as is
+AGENTS.md
+docs/ideacao.md
+specs/**/spec.md

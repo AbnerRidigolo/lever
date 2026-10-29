@@ -28,6 +28,7 @@
     "db:seed": {
       "dependsOn": ["^build"],
       "cache": false
-    }
+    },
+    "//#lint:root": {}
   }
 }

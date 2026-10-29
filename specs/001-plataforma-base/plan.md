@@ -1,10 +1,10 @@
 # Plano — Spec 001, etapa `base` (worktree de ordem 0)
 
-| Campo  | Valor                                                                 |
-| ------ | --------------------------------------------------------------------- |
-| Spec   | `specs/001-plataforma-base/spec.md`                                   |
-| Etapa  | `base` (seção 11, ordem 0)                                            |
-| Status | Aprovado pelo autor em 29/10/2026 (todas as propostas da seção 7 aceitas) |
+| Campo  | Valor                                                                           |
+| ------ | ------------------------------------------------------------------------------- |
+| Spec   | `specs/001-plataforma-base/spec.md`                                             |
+| Etapa  | `base` (seção 11, ordem 0)                                                      |
+| Status | Aprovado pelo autor em 29/10/2026 (todas as propostas da seção 7 aceitas)       |
 | Escopo | monorepo, `packages/config`, `packages/schemas`, `packages/db`, infra local, CI |
 
 ## 0. Observações antes de começar
@@ -18,30 +18,30 @@
 
 Consultei o registro do npm em 29/10/2026. Regra: versões exatas no `package.json` (sem `^`), sempre a mais recente estável que seja **compatível com as outras** e tenha **pelo menos 2 semanas de publicação**. Versões já ajustadas pela regra das 2 semanas (corte: 15/10/2026).
 
-| Ferramenta / pacote          | Versão     | Observação                                                                                  |
-| ---------------------------- | ---------- | ------------------------------------------------------------------------------------------- |
-| Node.js                      | 24 (LTS)   | `engines.node: ">=24"` e `.nvmrc` com `24`                                                  |
-| pnpm                         | 12.14.0    | Via corepack (`packageManager`). A 12.16.1 é de 27/10                                                           |
-| turbo                        | 2.11.8     | A 2.11.10 é de 20/10                                                                                           |
-| typescript                   | **6.0.3**  | A 7.0.2 já existe, mas o typescript-eslint 8.71 só aceita `<6.1.0`. Fico na 6.0.3.          |
-| zod                          | 4.6.7      |                                                                                             |
-| drizzle-orm                  | 0.45.4     |                                                                                             |
-| drizzle-kit                  | 0.31.11    | Gera as migrations                                                                          |
-| postgres (postgres.js)       | 3.4.9      | Driver do Drizzle. A 4.0.0 saiu hoje (29/10) |
-| eslint                       | 10.12.0    | Flat config. A 10.13.0 é de 16/10                                                                               |
-| @eslint/js                   | 10.0.1     |                                                                                             |
-| typescript-eslint            | 8.71.2     | A 8.72.1 é de 26/10. Preset `strictTypeChecked` + `stylisticTypeChecked`                                         |
-| eslint-config-prettier       | 10.1.8     |                                                                                             |
-| globals                      | 17.13.0    |                                                                                             |
-| prettier                     | 3.9.10     |                                                                                             |
-| vitest                       | 5.0.5      | Aceita Node `^24`                                                                           |
-| @testcontainers/postgresql   | 12.2.1     | Testes de integração com Postgres real                                                      |
-| tsx                          | 4.23.15    | Para rodar `migrate.ts` e `seed.ts`                                                         |
-| @types/node                  | 24.19.2    | Linha 24, para casar com o runtime (não a 26)                            |
-| Imagem Postgres              | `pgvector/pgvector:0.8.7-pg17-trixie` | Postgres 17 + pgvector (Q8)                                  |
-| Imagem `prom/prometheus`     | `v3.15.0`               |                                                        |
-| Imagem `grafana/grafana`     | `13.2.4`               |                                                        |
-| GitHub Actions               | `actions/checkout`, `actions/setup-node`, `pnpm/action-setup` na major atual | Node 24 no runner              |
+| Ferramenta / pacote        | Versão                                                                       | Observação                                                                         |
+| -------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Node.js                    | 24 (LTS)                                                                     | `engines.node: ">=24"` e `.nvmrc` com `24`                                         |
+| pnpm                       | 12.14.0                                                                      | Via corepack (`packageManager`). A 12.16.1 é de 27/10                              |
+| turbo                      | 2.11.8                                                                       | A 2.11.10 é de 20/10                                                               |
+| typescript                 | **6.0.3**                                                                    | A 7.0.2 já existe, mas o typescript-eslint 8.71 só aceita `<6.1.0`. Fico na 6.0.3. |
+| zod                        | 4.6.7                                                                        |                                                                                    |
+| drizzle-orm                | 0.45.4                                                                       |                                                                                    |
+| drizzle-kit                | 0.31.11                                                                      | Gera as migrations                                                                 |
+| postgres (postgres.js)     | 3.4.9                                                                        | Driver do Drizzle. A 4.0.0 saiu hoje (29/10)                                       |
+| eslint                     | 10.12.0                                                                      | Flat config. A 10.13.0 é de 16/10                                                  |
+| @eslint/js                 | 10.0.1                                                                       |                                                                                    |
+| typescript-eslint          | 8.71.2                                                                       | A 8.72.1 é de 26/10. Preset `strictTypeChecked` + `stylisticTypeChecked`           |
+| eslint-config-prettier     | 10.1.8                                                                       |                                                                                    |
+| globals                    | 17.13.0                                                                      |                                                                                    |
+| prettier                   | 3.9.10                                                                       |                                                                                    |
+| vitest                     | 5.0.5                                                                        | Aceita Node `^24`                                                                  |
+| @testcontainers/postgresql | 12.2.1                                                                       | Testes de integração com Postgres real                                             |
+| tsx                        | 4.23.15                                                                      | Para rodar `migrate.ts` e `seed.ts`                                                |
+| @types/node                | 24.19.2                                                                      | Linha 24, para casar com o runtime (não a 26)                                      |
+| Imagem Postgres            | `pgvector/pgvector:0.8.7-pg17-trixie`                                        | Postgres 17 + pgvector (Q8)                                                        |
+| Imagem `prom/prometheus`   | `v3.15.0`                                                                    |                                                                                    |
+| Imagem `grafana/grafana`   | `13.2.4`                                                                     |                                                                                    |
+| GitHub Actions             | `actions/checkout`, `actions/setup-node`, `pnpm/action-setup` na major atual | Node 24 no runner                                                                  |
 
 ## 2. Decisões de arquitetura desta etapa
 
@@ -59,10 +59,12 @@ Consultei o registro do npm em 29/10/2026. Regra: versões exatas no `package.js
 Cada tarefa vira **um commit** em Conventional Commits (o escopo vai entre parênteses).
 
 ### T1 — `chore: move spec 001 and record open-question decisions`
+
 - `specs/001-plataforma-base/spec.md` (movido da raiz; seção 13 passa a registrar as 3 decisões, ver §5)
 - `specs/001-plataforma-base/plan.md` (este arquivo)
 
 ### T2 — `chore: scaffold pnpm + turborepo monorepo`
+
 - `package.json` (raiz, privado, `packageManager`, `engines`, scripts — ver T10)
 - `pnpm-workspace.yaml` (`apps/*`, `services/*`, `packages/*`)
 - `turbo.json` (tarefas `build`, `dev`, `lint`, `typecheck`, `test`, `db:migrate`, `db:seed`, com `dependsOn` e `outputs`)
@@ -78,6 +80,7 @@ Cada tarefa vira **um commit** em Conventional Commits (o escopo vai entre parê
   - `infra/k6/README.md`
 
 ### T3 — `feat(config): add shared tsconfig, eslint and prettier`
+
 - `packages/config/package.json` (`@lever/config`, exports dos arquivos abaixo)
 - `packages/config/tsconfig.base.json` — `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `noImplicitOverride`, `verbatimModuleSyntax`, `isolatedModules`, `module/moduleResolution: NodeNext`, `target: ES2024`, `declaration`, `sourceMap`
 - `packages/config/tsconfig.library.json` (estende a base e emite em `dist/`)
@@ -90,25 +93,27 @@ Cada tarefa vira **um commit** em Conventional Commits (o escopo vai entre parê
 - Na raiz: `prettier.config.js` reexportando o compartilhado, `.prettierignore`, `eslint.config.js` para os arquivos da raiz e `tsconfig.json` (só `references`/`files: []`)
 
 ### T4 — `feat(schemas): add zod contracts for decision service and sdk`
+
 Pacote `packages/schemas` (`@lever/schemas`), um arquivo por contrato e `src/index.ts` reexportando tudo:
 
-| Arquivo                     | Conteúdo                                                                                                                                                       |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/common.ts`             | `resourceKeySchema` (kebab-case, 1–64 caracteres), `basisPointsSchema` (inteiro 0–10.000), `environmentKeySchema` (`development` \| `production`), `projectRoleSchema` (`admin` \| `editor` \| `viewer`), `uuidSchema` |
-| `src/user-context.ts`       | `userContextSchema`: `{ id: string (não vazio), attributes: Record<string, string \| number \| boolean \| string[]> }` (seção 8)                                    |
-| `src/segment.ts`            | `segmentOperatorSchema` com os 7 operadores (AC-4.2); `segmentConditionSchema` (`attribute`, `operator`, `value`), com o valor validado pelo operador: `in`/`not_in` exigem lista, `greater_than`/`less_than` exigem número, e assim por diante; `segmentRulesSchema` (`{ conditions: Condition[] }` com 1 a 20 condições, combinadas por **E**, ver Q1); `segmentConfigSchema` (`key`, `rules`) |
-| `src/flag.ts`               | `flagTypeSchema` (`boolean` \| `string` \| `number` \| `json`); `flagValueSchemaFor(type)`; `flagDefinitionSchema` (união discriminada por `type`, valida `defaultValue` e `servedValue` conforme o tipo, AC-1.4); `flagConfigSchema` (o que vai em `/v1/config`: `key`, `type`, `salt`, `defaultValue`, `enabled`, `servedValue`, `rolloutBps`, `segmentKey \| null`) |
-| `src/experiment.ts`         | `experimentStatusSchema` (`draft`, `running`, `paused`, `completed`, AC-3.5); `experimentVariantSchema` (`key`, `weightBps`, `isControl`); `experimentVariantsSchema` (2 a 5 variantes, soma = 10.000, exatamente um controle, chaves únicas, AC-3.1); `experimentConfigSchema` (`key`, `salt`, `status`, `segmentKey \| null`, `variants`) |
-| `src/config.ts`             | `environmentConfigSchema`: `{ version, flags, experiments, segments }` (resposta de `GET /v1/config`)                                                          |
-| `src/stream.ts`             | `streamEventSchema`: união discriminada `config` (`data` = configuração completa com `version`) \| `ping` (`data: {}`), mais a constante `STREAM_PING_INTERVAL_MS = 15_000` |
-| `src/evaluate.ts`           | `evaluateRequestSchema` (`user`, `flags?`, `experiments?`) e `evaluateResponseSchema` (`flags: Record<key, value>`, `experiments: Record<key, variantKey>`, `version`) |
-| `src/exposure.ts`           | `exposureEventSchema`: `{ type: 'exposure', experimentKey, variantKey, userId, configVersion, timestamp }`, com `timestamp` em ISO 8601                          |
-| `src/errors.ts`             | `errorCodeSchema` (`bad_request`, `validation_failed`, `unauthorized`, `forbidden`, `not_found`, `conflict`, `rate_limited`, `internal`, `service_unavailable`); `apiErrorSchema` = `{ error: { code, message, details?, requestId? } }`; `ERROR_HTTP_STATUS` (código → status HTTP); `createApiError()` (função pura que monta o objeto) |
-| `src/env.ts`                | utilitário `parseEnv(schema, source)` que lança erro legível listando as variáveis inválidas (usado pelo `db` e pelos serviços futuros)                         |
-| `src/*.test.ts`             | testes Vitest (ver §4)                                                                                                                                         |
-| `package.json`, `tsconfig.json`, `tsconfig.build.json`, `vitest.config.ts`, `eslint.config.js` | configuração do pacote |
+| Arquivo                                                                                        | Conteúdo                                                                                                                                                                                                                                                                                                                                                                                         |
+| ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `src/common.ts`                                                                                | `resourceKeySchema` (kebab-case, 1–64 caracteres), `basisPointsSchema` (inteiro 0–10.000), `environmentKeySchema` (`development` \| `production`), `projectRoleSchema` (`admin` \| `editor` \| `viewer`), `uuidSchema`                                                                                                                                                                           |
+| `src/user-context.ts`                                                                          | `userContextSchema`: `{ id: string (não vazio), attributes: Record<string, string \| number \| boolean \| string[]> }` (seção 8)                                                                                                                                                                                                                                                                 |
+| `src/segment.ts`                                                                               | `segmentOperatorSchema` com os 7 operadores (AC-4.2); `segmentConditionSchema` (`attribute`, `operator`, `value`), com o valor validado pelo operador: `in`/`not_in` exigem lista, `greater_than`/`less_than` exigem número, e assim por diante; `segmentRulesSchema` (`{ conditions: Condition[] }` com 1 a 20 condições, combinadas por **E**, ver Q1); `segmentConfigSchema` (`key`, `rules`) |
+| `src/flag.ts`                                                                                  | `flagTypeSchema` (`boolean` \| `string` \| `number` \| `json`); `flagValueSchemaFor(type)`; `flagDefinitionSchema` (união discriminada por `type`, valida `defaultValue` e `servedValue` conforme o tipo, AC-1.4); `flagConfigSchema` (o que vai em `/v1/config`: `key`, `type`, `salt`, `defaultValue`, `enabled`, `servedValue`, `rolloutBps`, `segmentKey \| null`)                           |
+| `src/experiment.ts`                                                                            | `experimentStatusSchema` (`draft`, `running`, `paused`, `completed`, AC-3.5); `experimentVariantSchema` (`key`, `weightBps`, `isControl`); `experimentVariantsSchema` (2 a 5 variantes, soma = 10.000, exatamente um controle, chaves únicas, AC-3.1); `experimentConfigSchema` (`key`, `salt`, `status`, `segmentKey \| null`, `variants`)                                                      |
+| `src/config.ts`                                                                                | `environmentConfigSchema`: `{ version, flags, experiments, segments }` (resposta de `GET /v1/config`)                                                                                                                                                                                                                                                                                            |
+| `src/stream.ts`                                                                                | `streamEventSchema`: união discriminada `config` (`data` = configuração completa com `version`) \| `ping` (`data: {}`), mais a constante `STREAM_PING_INTERVAL_MS = 15_000`                                                                                                                                                                                                                      |
+| `src/evaluate.ts`                                                                              | `evaluateRequestSchema` (`user`, `flags?`, `experiments?`) e `evaluateResponseSchema` (`flags: Record<key, value>`, `experiments: Record<key, variantKey>`, `version`)                                                                                                                                                                                                                           |
+| `src/exposure.ts`                                                                              | `exposureEventSchema`: `{ type: 'exposure', experimentKey, variantKey, userId, configVersion, timestamp }`, com `timestamp` em ISO 8601                                                                                                                                                                                                                                                          |
+| `src/errors.ts`                                                                                | `errorCodeSchema` (`bad_request`, `validation_failed`, `unauthorized`, `forbidden`, `not_found`, `conflict`, `rate_limited`, `internal`, `service_unavailable`); `apiErrorSchema` = `{ error: { code, message, details?, requestId? } }`; `ERROR_HTTP_STATUS` (código → status HTTP); `createApiError()` (função pura que monta o objeto)                                                        |
+| `src/env.ts`                                                                                   | utilitário `parseEnv(schema, source)` que lança erro legível listando as variáveis inválidas (usado pelo `db` e pelos serviços futuros)                                                                                                                                                                                                                                                          |
+| `src/*.test.ts`                                                                                | testes Vitest (ver §4)                                                                                                                                                                                                                                                                                                                                                                           |
+| `package.json`, `tsconfig.json`, `tsconfig.build.json`, `vitest.config.ts`, `eslint.config.js` | configuração do pacote                                                                                                                                                                                                                                                                                                                                                                           |
 
 ### T5 — `feat(db): add drizzle schema for phase 1 data model`
+
 Pacote `packages/db` (`@lever/db`):
 
 - `src/schema/` com um arquivo por agregado, todos reexportados por `src/schema/index.ts`:
@@ -130,12 +135,14 @@ Pacote `packages/db` (`@lever/db`):
 - `drizzle.config.ts` (o `export default` aqui é exigido pela ferramenta; fica na exceção da regra do lint)
 
 ### T6 — `feat(db): add initial migration and migrate script`
+
 - `packages/db/migrations/0000_initial.sql` e `migrations/meta/*` (gerados pelo `drizzle-kit generate`, nunca editados à mão)
 - `packages/db/migrations/0001_audit_log_append_only.sql` (gerado com `drizzle-kit generate --custom`): uma função e um trigger `BEFORE UPDATE OR DELETE ON audit_log` que lançam exceção, e um trigger `BEFORE TRUNCATE`
 - `packages/db/src/migrate.ts`: aplica as migrations com o migrator do Drizzle e lê `DATABASE_URL` validada
 - scripts do pacote: `db:generate`, `db:migrate`
 
 ### T7 — `feat(db): add seed with demo project, flag and experiment`
+
 - `packages/db/src/seed/data.ts`: dados fictícios com IDs e salts fixos
   - usuário `admin@lever.local` / "Admin Demo"
   - projeto "Lever Demo Store" / `demo-store`, com o admin como `admin`
@@ -148,11 +155,13 @@ Pacote `packages/db` (`@lever/db`):
 - script do pacote: `db:seed`
 
 ### T8 — `test(db): add integration tests with testcontainers`
+
 - `packages/db/test/setup.ts`: sobe um `PostgreSqlContainer` (`pgvector/pgvector:0.8.7-pg17-trixie`, a mesma tag do compose), roda as migrations e devolve o `db`
 - `packages/db/test/*.test.ts` (ver §4)
 - `packages/db/vitest.config.ts` com `testTimeout` maior e `fileParallelism: false`
 
 ### T9 — `feat(infra): add docker compose with postgres, prometheus and grafana`
+
 - `infra/docker-compose.yml`:
   - `postgres` (`pgvector/pgvector:0.8.7-pg17-trixie`), volume nomeado, `healthcheck` com `pg_isready`, porta `${POSTGRES_PORT:-5432}`, credenciais lidas do `.env`
   - `prometheus` (`v3.15.0`), porta 9090, `infra/prometheus/prometheus.yml`
@@ -164,6 +173,7 @@ Pacote `packages/db` (`@lever/db`):
 - `infra/grafana/dashboards/.gitkeep` (o dashboard `Lever / Decisão` é da worktree `quality`)
 
 ### T10 — `chore: add root scripts, env example and readme`
+
 - Scripts do `package.json` da raiz:
   - `dev` → `turbo run dev`
   - `build` → `turbo run build`
@@ -177,37 +187,39 @@ Pacote `packages/db` (`@lever/db`):
 - `README.md`: o que é o Lever (resumo), pré-requisitos (Node 24, corepack, Docker), passo a passo (`corepack enable` → `cp .env.example .env` → `pnpm install` → `docker compose up -d` → `pnpm db:migrate` → `pnpm db:seed` → `pnpm test`), portas, estrutura de pastas e links para AGENTS.md e specs
 
 ### T11 — `ci: add github actions workflow`
+
 - `.github/workflows/ci.yml`: roda em `push` e `pull_request`, em `ubuntu-latest`, com `concurrency` cancelando execuções antigas. Passos: checkout → `pnpm/action-setup` → `setup-node` (24, cache do pnpm) → `pnpm install --frozen-lockfile` → `pnpm lint` → `pnpm typecheck` → `pnpm test`. O runner já tem Docker, então o Testcontainers funciona sem serviço extra. Também roda `pnpm format:check`.
 
 ### T12 — Verificação final (sem commit, salvo correções)
+
 Rodo, nesta ordem, e mostro a saída: `pnpm install`, `docker compose up -d`, `pnpm db:migrate`, `pnpm db:seed`, `pnpm lint`, `pnpm typecheck` e `pnpm test`.
 
 ## 4. Testes desta etapa
 
 Esta etapa não implementa nenhum comportamento de ponta a ponta, então nenhuma AC fica **completamente** coberta aqui. Os testes cobrem a parte de **contrato e dados** de cada AC e trazem o ID no nome, por exemplo `it('AC-3.1 (contract): rejects variants whose weights do not sum to 10000')`.
 
-| Arquivo                                   | O que verifica                                                                                                    | AC / FR relacionados              |
-| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | --------------------------------- |
-| `schemas/src/flag.test.ts`                | valor padrão e servido batem com o tipo (boolean, string, number, json) e há rejeições claras                     | AC-1.4 (contrato), FR-002         |
-| `schemas/src/experiment.test.ts`          | 2 a 5 variantes, soma 10.000, exatamente um controle, chaves únicas, 4 estados                                    | AC-3.1, AC-3.5 (contrato), FR-003 |
-| `schemas/src/segment.test.ts`             | os 7 operadores, a forma do valor por operador e o exemplo `country = BR` e `device in [mobile]`                  | AC-4.1, AC-4.2 (contrato)         |
-| `schemas/src/user-context.test.ts`        | tipos de atributo permitidos e rejeição de objetos aninhados                                                      | seção 8                           |
-| `schemas/src/contracts.test.ts`           | `/v1/config`, `/v1/evaluate`, eventos de stream e exposição aceitam exemplos válidos e rejeitam inválidos         | FR-005, FR-006, FR-007, AC-5.7 (contrato) |
-| `schemas/src/errors.test.ts`              | formato padrão de erro e mapa código → status                                                                     | AC-7.2 (o 403 usa `forbidden`)    |
-| `db/test/migrations.test.ts`              | as migrations aplicam do zero num Postgres 17 real e todas as tabelas da seção 7 existem                          | seção 7                           |
-| `db/test/constraints.test.ts`             | chaves únicas por projeto, `rollout_bps` fora de 0–10.000 rejeitado, dois controles rejeitados, membro duplicado rejeitado | FR-001, FR-002, FR-003    |
-| `db/test/audit-log.test.ts`               | `UPDATE`, `DELETE` e `TRUNCATE` em `audit_log` falham                                                             | AC-6.2 (camada do banco), FR-009  |
-| `db/test/seed.test.ts`                    | o seed cria o esperado e rodar duas vezes não duplica                                                             | AC-8.2 e AC-8.3 (dados)           |
+| Arquivo                            | O que verifica                                                                                                             | AC / FR relacionados                      |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| `schemas/src/flag.test.ts`         | valor padrão e servido batem com o tipo (boolean, string, number, json) e há rejeições claras                              | AC-1.4 (contrato), FR-002                 |
+| `schemas/src/experiment.test.ts`   | 2 a 5 variantes, soma 10.000, exatamente um controle, chaves únicas, 4 estados                                             | AC-3.1, AC-3.5 (contrato), FR-003         |
+| `schemas/src/segment.test.ts`      | os 7 operadores, a forma do valor por operador e o exemplo `country = BR` e `device in [mobile]`                           | AC-4.1, AC-4.2 (contrato)                 |
+| `schemas/src/user-context.test.ts` | tipos de atributo permitidos e rejeição de objetos aninhados                                                               | seção 8                                   |
+| `schemas/src/contracts.test.ts`    | `/v1/config`, `/v1/evaluate`, eventos de stream e exposição aceitam exemplos válidos e rejeitam inválidos                  | FR-005, FR-006, FR-007, AC-5.7 (contrato) |
+| `schemas/src/errors.test.ts`       | formato padrão de erro e mapa código → status                                                                              | AC-7.2 (o 403 usa `forbidden`)            |
+| `db/test/migrations.test.ts`       | as migrations aplicam do zero num Postgres 17 real e todas as tabelas da seção 7 existem                                   | seção 7                                   |
+| `db/test/constraints.test.ts`      | chaves únicas por projeto, `rollout_bps` fora de 0–10.000 rejeitado, dois controles rejeitados, membro duplicado rejeitado | FR-001, FR-002, FR-003                    |
+| `db/test/audit-log.test.ts`        | `UPDATE`, `DELETE` e `TRUNCATE` em `audit_log` falham                                                                      | AC-6.2 (camada do banco), FR-009          |
+| `db/test/seed.test.ts`             | o seed cria o esperado e rodar duas vezes não duplica                                                                      | AC-8.2 e AC-8.3 (dados)                   |
 
 ## 5. Registro na seção 13 da spec
 
 A seção 13 vira "Questões em aberto e decisões", com uma tabela:
 
-| Questão | Decisão (29/10/2026) |
-| ------- | -------------------- |
+| Questão                                                       | Decisão (29/10/2026)                                                                                                     |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | O id anônimo da loja é substituído pelo id da conta no login? | Sim. No login, o id da conta substitui o id anônimo. Consequência registrada: a variante pode mudar no momento do login. |
-| Camadas de experimentos mutuamente exclusivos | Ficam para a spec 002. |
-| SDK para o navegador nesta fase? | Não. Nesta fase o SDK é só para servidor. |
+| Camadas de experimentos mutuamente exclusivos                 | Ficam para a spec 002.                                                                                                   |
+| SDK para o navegador nesta fase?                              | Não. Nesta fase o SDK é só para servidor.                                                                                |
 
 ## 6. Fora do escopo desta etapa
 

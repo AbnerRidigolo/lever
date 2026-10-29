@@ -10,14 +10,20 @@
     "dev": "turbo run dev",
     "build": "turbo run build",
     "test": "turbo run test",
-    "lint": "turbo run lint",
+    "lint": "turbo run lint lint:root",
     "typecheck": "turbo run typecheck",
     "db:migrate": "turbo run db:migrate --filter=@lever/db",
     "db:seed": "turbo run db:seed --filter=@lever/db",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "lint:root": "eslint ."
   },
   "devDependencies": {
-    "turbo": "2.11.8"
+    "@lever/config": "workspace:*",
+    "@types/node": "24.19.2",
+    "eslint": "10.12.0",
+    "prettier": "3.9.10",
+    "turbo": "2.11.8",
+    "typescript": "6.0.3"
   }
 }
