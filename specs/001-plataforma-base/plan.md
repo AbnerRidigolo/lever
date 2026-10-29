@@ -4,7 +4,7 @@
 | ------ | ------------------------------------------------------------------------------- |
 | Spec   | `specs/001-plataforma-base/spec.md`                                             |
 | Etapa  | `base` (seção 11, ordem 0)                                                      |
-| Status | Aprovado pelo autor em 29/10/2026 (todas as propostas da seção 7 aceitas)       |
+| Status | Concluído em 29/10/2026 (plano aprovado pelo autor; desvios na seção 8)         |
 | Escopo | monorepo, `packages/config`, `packages/schemas`, `packages/db`, infra local, CI |
 
 ## 0. Observações antes de começar
