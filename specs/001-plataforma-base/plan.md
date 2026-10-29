@@ -235,3 +235,15 @@ A seção 13 vira "Questões em aberto e decisões", com uma tabela:
 - **Q6 — API keys.** A spec não define o formato da key nem o algoritmo do hash. Proponho deixar essa definição para a worktree `decision`, que é quem valida a key. O seed não cria nenhuma key. A worktree `decision` também pode querer uma coluna `key_prefix` para o console mostrar a key mascarada, o que exigiria mudar `packages/db`. Prefere que eu já inclua essa coluna agora, para evitar uma migration paralela depois?
 - **Q7 — `.mcp.json`** está na raiz e não é rastreado. Coloco no `.gitignore` ou deixo como está?
 - **Q8 — Imagem do Postgres.** A ideação prevê pgvector na fase 3. Proponho usar já a imagem `pgvector/pgvector:pg17` (Postgres 17 com a extensão disponível, mas sem ativá-la) no compose e no Testcontainers. Assim a fase 3 não precisa trocar a imagem. Ou prefere a `postgres:17-alpine` oficial agora?
+
+## 8. Execução (29/10/2026)
+
+Etapa concluída. Desvios em relação ao plano:
+
+- **Sem `tsx`.** `db:migrate` e `db:seed` rodam o JavaScript compilado (`node --env-file-if-exists=../../.env dist/cli/*.js`), e o Turborepo compila o pacote antes. Uma dependência a menos.
+- **`packages/schemas/src/audit.ts`** foi adicionado com os enums `AUDIT_ACTIONS` e `AUDIT_RESOURCE_TYPES`, para que o `pgEnum` do banco venha dos schemas, sem duplicar valores.
+- **O seed também grava a auditoria** de criação da flag e do experimento, como o console faria (AC-6.1).
+- **`compose.yaml` exige o `.env`**: o `include` do Compose falha se o arquivo não existir. O README já manda copiar o `.env.example` antes.
+- **`pnpm-workspace.yaml`** tem `minimumReleaseAge: 20160` (2 semanas) e `allowBuilds` negando os scripts de instalação de `esbuild`, `ssh2`, `cpu-features` e `protobufjs`, que o pnpm 12 exige declarar.
+- **pino** (10.3.1) entrou como dependência de `packages/db` para os logs dos scripts de migração e seed (AGENTS.md).
+- **GitHub Actions** nas majors atuais: `actions/checkout@v7`, `actions/setup-node@v7`, `pnpm/action-setup@v6`.
