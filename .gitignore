@@ -1,0 +1,30 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+*.tsbuildinfo
+.next/
+out/
+
+# tooling
+.turbo/
+coverage/
+
+# env (only the example is versioned)
+.env
+.env.*
+!.env.example
+
+# local agent config
+.mcp.json
+
+# os / editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# logs
+*.log

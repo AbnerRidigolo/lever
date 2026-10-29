@@ -1,0 +1,7 @@
+packages:
+  - apps/*
+  - services/*
+  - packages/*
+
+# Only install versions published at least two weeks ago (in minutes).
+minimumReleaseAge: 20160
