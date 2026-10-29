@@ -1,3 +1,4 @@
 import { pino } from 'pino';
 
-export const logger = pino({ name: 'lever-db' });
+// `base` replaces pino's default `pid` and `hostname` fields.
+export const logger = pino({ base: { name: 'lever-db' } });
