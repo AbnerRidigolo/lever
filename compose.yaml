@@ -1,0 +1,9 @@
+# Lets `docker compose up -d` run from the repository root (AGENTS.md).
+# The services live in infra/docker-compose.yml; variables come from this folder's .env,
+# which must exist: create it with `cp .env.example .env`.
+name: lever
+
+include:
+  - path: infra/docker-compose.yml
+    project_directory: infra
+    env_file: .env
