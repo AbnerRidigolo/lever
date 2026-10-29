@@ -247,3 +247,12 @@ Etapa concluída. Desvios em relação ao plano:
 - **`pnpm-workspace.yaml`** tem `minimumReleaseAge: 20160` (2 semanas) e `allowBuilds` negando os scripts de instalação de `esbuild`, `ssh2`, `cpu-features` e `protobufjs`, que o pnpm 12 exige declarar.
 - **pino** (10.3.1) entrou como dependência de `packages/db` para os logs dos scripts de migração e seed (AGENTS.md).
 - **GitHub Actions** nas majors atuais: `actions/checkout@v7`, `actions/setup-node@v7`, `pnpm/action-setup@v6`.
+
+### Decisões tomadas depois da entrega
+
+O autor deixou a cargo do agente as dúvidas levantadas na entrega. Elas foram registradas na seção 13 da spec:
+
+- **Flag `json`:** passa a aceitar só objeto ou array.
+- **FR-008:** a migration `0002_config_versions_notify` cria o trigger de `LISTEN/NOTIFY`. Assim a worktree `decision` não precisa de migration.
+- **Tabelas do Auth.js:** ficam com a worktree `console`, que passa a ser a dona da próxima migration.
+- **Logs dos scripts:** não incluem mais `pid` nem `hostname`.
