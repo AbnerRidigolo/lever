@@ -1,0 +1,7 @@
+{
+  "extends": "@lever/config/tsconfig.library.json",
+  "compilerOptions": {
+    "rootDir": "."
+  },
+  "include": ["src", "*.config.ts"]
+}
