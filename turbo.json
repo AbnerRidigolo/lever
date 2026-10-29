@@ -22,11 +22,11 @@
       "outputs": ["coverage/**"]
     },
     "db:migrate": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["build"],
       "cache": false
     },
     "db:seed": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["build"],
       "cache": false
     },
     "//#lint:root": {}
