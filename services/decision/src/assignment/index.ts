@@ -8,16 +8,11 @@ import type { ExperimentConfig } from '@lever/schemas';
  * Deterministic bucket of a user for a resource, from 0 to 9,999 (basis points).
  * Depends only on the resource key, its salt and the user id (FR-004).
  */
-export function bucketOf(resourceKey: string, salt: string, userId: string): number {
-  void resourceKey;
-  void salt;
-  void userId;
+export function bucketOf(_resourceKey: string, _salt: string, _userId: string): number {
   throw new Error('not implemented: reserved for author');
 }
 
 /** Variant key of a user in a running experiment, following the variant weights. */
-export function assignVariant(experiment: ExperimentConfig, userId: string): string {
-  void experiment;
-  void userId;
+export function assignVariant(_experiment: ExperimentConfig, _userId: string): string {
   throw new Error('not implemented: reserved for author');
 }
