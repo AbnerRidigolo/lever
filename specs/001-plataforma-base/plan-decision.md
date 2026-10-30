@@ -5,7 +5,7 @@
 | Spec     | `specs/001-plataforma-base/spec.md`                                                        |
 | Etapa    | `decision` (seção 11, ordem 1)                                                             |
 | Worktree | `../lever-decision`, branch `feat/decision`                                                |
-| Status   | Aguardando aprovação do autor                                                              |
+| Status   | Aprovado pelo autor em 29/10/2026 (D1 a D9 aceitas)                                        |
 | Escopo   | `services/decision`, mais os ajustes fora dele listados na seção 3 (precisam de aprovação) |
 
 ## 1. O que esta etapa entrega
