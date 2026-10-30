@@ -4,6 +4,7 @@ import Fastify, { type FastifyBaseLogger, type FastifyInstance } from 'fastify';
 import type { ApiKeyStore } from './auth/api-key-store.js';
 import type { ConfigStore } from './config/config-store.js';
 import { registerErrorHandlers } from './errors.js';
+import type { Evaluator } from './evaluator.js';
 import { healthRoutes } from './routes/health.js';
 import { v1Routes } from './routes/v1.js';
 
@@ -11,6 +12,7 @@ export interface AppDeps {
   logger: FastifyBaseLogger;
   apiKeys: ApiKeyStore;
   configStore: ConfigStore;
+  evaluator: Evaluator;
   /** Interval between `ping` events; 15 s by default (spec 001, section 8). */
   streamPingIntervalMs?: number;
 }
@@ -30,6 +32,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
     prefix: '/v1',
     apiKeys: deps.apiKeys,
     configStore: deps.configStore,
+    evaluator: deps.evaluator,
     stream: { pingIntervalMs: deps.streamPingIntervalMs ?? STREAM_PING_INTERVAL_MS },
   });
 

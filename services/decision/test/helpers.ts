@@ -19,6 +19,7 @@ import { buildApp, type AppDeps } from '../src/app.js';
 import { ApiKeyStore, createDbApiKeySource } from '../src/auth/api-key-store.js';
 import { ConfigStore } from '../src/config/config-store.js';
 import { loadEnvironmentConfig } from '../src/config/load-config.js';
+import type { Evaluator } from '../src/evaluator.js';
 
 export const silentLogger: FastifyBaseLogger = pino({ level: 'silent' });
 
@@ -80,6 +81,17 @@ export async function eventually<T>(
   }
 }
 
+/**
+ * Stand-in for the author evaluator, used only by the tests of the routes: serves the flag
+ * value when the flag is on and always picks the control variant. It is not an implementation
+ * of the reserved assignment or evaluation logic.
+ */
+export const fakeEvaluator: Evaluator = {
+  evaluateFlag: (flag) => (flag.enabled ? flag.servedValue : flag.defaultValue),
+  evaluateExperiment: (experiment) =>
+    experiment.variants.find((variant) => variant.isControl)?.key ?? 'control',
+};
+
 export interface TestApp {
   app: FastifyInstance;
   apiKeys: ApiKeyStore;
@@ -97,7 +109,13 @@ export function createTestApp(db: Database, overrides: Partial<AppDeps> = {}): T
     load: (environmentId) => loadEnvironmentConfig(db, environmentId),
     logger: silentLogger,
   });
-  const deps: AppDeps = { logger: silentLogger, apiKeys, configStore, ...overrides };
+  const deps: AppDeps = {
+    logger: silentLogger,
+    apiKeys,
+    configStore,
+    evaluator: fakeEvaluator,
+    ...overrides,
+  };
   const app = buildApp(deps);
   afterAll(() => app.close());
   return { app, apiKeys: deps.apiKeys, configStore: deps.configStore };

@@ -6,6 +6,7 @@ import { listenForConfigChanges, type ConfigChangeListener } from './config/conf
 import { ConfigStore } from './config/config-store.js';
 import { loadEnvironmentConfig } from './config/load-config.js';
 import { loadDecisionEnv } from './env.js';
+import { authorEvaluator } from './evaluator.js';
 import { createLogger } from './logger.js';
 
 const env = loadDecisionEnv();
@@ -21,7 +22,7 @@ const configStore = new ConfigStore({
   load: (environmentId) => loadEnvironmentConfig(database.db, environmentId),
   logger,
 });
-const app = buildApp({ logger, apiKeys, configStore });
+const app = buildApp({ logger, apiKeys, configStore, evaluator: authorEvaluator });
 let listener: ConfigChangeListener | undefined;
 
 async function shutdown(signal: string): Promise<void> {
