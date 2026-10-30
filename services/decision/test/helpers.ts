@@ -8,9 +8,14 @@ import {
 } from '@lever/db';
 import type { EnvironmentKey } from '@lever/schemas';
 import { and, eq } from 'drizzle-orm';
-import type { FastifyBaseLogger } from 'fastify';
+import type { FastifyBaseLogger, FastifyInstance } from 'fastify';
 import { pino } from 'pino';
 import { afterAll, inject } from 'vitest';
+
+import { buildApp, type AppDeps } from '../src/app.js';
+import { ApiKeyStore, createDbApiKeySource } from '../src/auth/api-key-store.js';
+import { ConfigStore } from '../src/config/config-store.js';
+import { loadEnvironmentConfig } from '../src/config/load-config.js';
 
 export const silentLogger: FastifyBaseLogger = pino({ level: 'silent' });
 
@@ -70,4 +75,27 @@ export async function eventually<T>(
       await new Promise((resolve) => setTimeout(resolve, intervalMs));
     }
   }
+}
+
+export interface TestApp {
+  app: FastifyInstance;
+  apiKeys: ApiKeyStore;
+  configStore: ConfigStore;
+}
+
+/** The real app wired to the test database, as main.ts does. */
+export function createTestApp(db: Database, overrides: Partial<AppDeps> = {}): TestApp {
+  const apiKeys = new ApiKeyStore({
+    source: createDbApiKeySource(db),
+    logger: silentLogger,
+    ttlMs: 60_000,
+  });
+  const configStore = new ConfigStore({
+    load: (environmentId) => loadEnvironmentConfig(db, environmentId),
+    logger: silentLogger,
+  });
+  const deps: AppDeps = { logger: silentLogger, apiKeys, configStore, ...overrides };
+  const app = buildApp(deps);
+  afterAll(() => app.close());
+  return { app, apiKeys: deps.apiKeys, configStore: deps.configStore };
 }

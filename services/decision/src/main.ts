@@ -2,6 +2,8 @@ import { createDb } from '@lever/db';
 
 import { buildApp } from './app.js';
 import { ApiKeyStore, createDbApiKeySource } from './auth/api-key-store.js';
+import { ConfigStore } from './config/config-store.js';
+import { loadEnvironmentConfig } from './config/load-config.js';
 import { loadDecisionEnv } from './env.js';
 import { createLogger } from './logger.js';
 
@@ -14,7 +16,11 @@ const apiKeys = new ApiKeyStore({
   logger,
   ttlMs: env.API_KEY_CACHE_TTL_MS,
 });
-const app = buildApp({ logger, apiKeys });
+const configStore = new ConfigStore({
+  load: (environmentId) => loadEnvironmentConfig(database.db, environmentId),
+  logger,
+});
+const app = buildApp({ logger, apiKeys, configStore });
 
 async function shutdown(signal: string): Promise<void> {
   logger.info({ signal }, 'shutting down');

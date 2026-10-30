@@ -1,21 +1,11 @@
 import { apiErrorSchema } from '@lever/schemas';
-import { pino } from 'pino';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
-import { buildApp } from '../src/app.js';
-import { ApiKeyStore } from '../src/auth/api-key-store.js';
 import { HttpError } from '../src/errors.js';
+import { createTestApp, useTestDb } from './helpers.js';
 
-const logger = pino({ level: 'silent' });
-const unusedSource = {
-  find: () => Promise.resolve(null),
-  touch: () => Promise.resolve(),
-};
-const app = buildApp({
-  logger,
-  apiKeys: new ApiKeyStore({ source: unusedSource, logger, ttlMs: 1_000 }),
-});
+const { app } = createTestApp(useTestDb());
 
 beforeAll(async () => {
   app.get('/test/http-error', () => {
@@ -28,8 +18,6 @@ beforeAll(async () => {
   app.post('/test/json', (request) => request.body);
   await app.ready();
 });
-
-afterAll(() => app.close());
 
 describe('standard errors', () => {
   it('returns 404 for unknown routes', async () => {
