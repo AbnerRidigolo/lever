@@ -3,6 +3,8 @@ import {
   configVersions,
   createDb,
   environments,
+  flagEnvironments,
+  flags,
   generateApiKey,
   projects,
   type Database,
@@ -122,4 +124,39 @@ export async function publishChange(
     await tx.insert(configVersions).values({ environmentId, version });
     return version;
   });
+}
+
+/**
+ * Creates a boolean flag in the seeded project, off in both environments, so a test file
+ * can change it without touching data other files rely on. Returns the flag id.
+ */
+export async function createTestFlag(db: Database, key: string): Promise<string> {
+  const [project] = await db.select().from(projects).where(eq(projects.slug, 'demo-store'));
+  if (project === undefined) throw new Error('seed project missing');
+  const [flag] = await db
+    .insert(flags)
+    .values({
+      projectId: project.id,
+      key,
+      type: 'boolean',
+      defaultValue: false,
+      salt: `salt-${key}`,
+    })
+    .returning({ id: flags.id });
+  if (flag === undefined) throw new Error('flag not inserted');
+
+  const envs = await db
+    .select({ id: environments.id })
+    .from(environments)
+    .where(eq(environments.projectId, project.id));
+  await db.insert(flagEnvironments).values(
+    envs.map((env) => ({
+      flagId: flag.id,
+      environmentId: env.id,
+      enabled: false,
+      servedValue: true,
+      rolloutBps: 10_000,
+    })),
+  );
+  return flag.id;
 }

@@ -1,3 +1,4 @@
+import { STREAM_PING_INTERVAL_MS } from '@lever/schemas';
 import Fastify, { type FastifyBaseLogger, type FastifyInstance } from 'fastify';
 
 import type { ApiKeyStore } from './auth/api-key-store.js';
@@ -10,6 +11,8 @@ export interface AppDeps {
   logger: FastifyBaseLogger;
   apiKeys: ApiKeyStore;
   configStore: ConfigStore;
+  /** Interval between `ping` events; 15 s by default (spec 001, section 8). */
+  streamPingIntervalMs?: number;
 }
 
 /** Builds the Fastify app. Dependencies are created by `main.ts` (or by the tests). */
@@ -27,6 +30,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
     prefix: '/v1',
     apiKeys: deps.apiKeys,
     configStore: deps.configStore,
+    stream: { pingIntervalMs: deps.streamPingIntervalMs ?? STREAM_PING_INTERVAL_MS },
   });
 
   return app;
