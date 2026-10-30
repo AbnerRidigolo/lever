@@ -8,7 +8,12 @@ Plataforma de experimentação com um sistema de recomendação acoplado: featur
 
 ## Estado atual
 
-A etapa `base` da spec 001 está pronta: monorepo, configurações compartilhadas, contratos Zod, banco (schema, migrations e seed) e infraestrutura local. O console, o serviço de decisão, o SDK e a loja chegam nas próximas worktrees (seção 11 da spec).
+Da spec 001 estão prontos:
+
+- **Etapa `base`:** monorepo, configurações compartilhadas, contratos Zod, banco (schema, migrations e seed) e infraestrutura local.
+- **Etapa `decision`:** o serviço de decisão em [`services/decision`](services/decision/README.md). A atribuição de variantes e a avaliação de regras são do autor e ainda lançam `not implemented`, então `/v1/evaluate` responde 500 até lá.
+
+O SDK, o console e a loja chegam nas próximas worktrees (seção 11 da spec).
 
 ## Pré-requisitos
 

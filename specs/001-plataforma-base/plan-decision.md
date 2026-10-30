@@ -148,3 +148,13 @@ Integração com Postgres real via Testcontainers e o seed da `base`. O app sobe
 - **AC-5.8 (paridade):** depende de D1.
 - **NFR-002 (k6) e NFR-003 de ponta a ponta:** ficam para a worktree `quality`.
 - **Dashboard do Grafana:** fica para a worktree `quality`.
+
+## 8. Execução (29/10/2026)
+
+Etapa concluída. Desvios em relação ao plano:
+
+- **D5 ajustada (stale-while-revalidate).** O teste de resiliência mostrou que, com o Postgres parado, as consultas não falham rápido: ficam presas até o timeout de conexão (30 s). Agora o serviço responde da memória para uma key conhecida, mesmo expirada, e a revalida em segundo plano. Uma key desconhecida espera no máximo 2 s e depois recebe 503. Consequência: uma key revogada funciona por até 30 s, mais uma requisição. O desligamento também passou a ter limite de tempo para fechar o pool.
+- **Arquivos novos não listados:** `src/logger.ts`, `src/timeout.ts`, `src/routes/v1.ts`, `src/routes/health.ts`, `src/cli/api-keys.ts` (núcleo testável do script), `test/sse.ts` (cliente SSE dos testes) e `test/resilience.test.ts`.
+- **`tsx`** entrou como dependência de desenvolvimento do serviço, para `dev` e `api-key:create`.
+- **`fakeEvaluator`** (só nos testes) substitui as funções reservadas nos testes das rotas. Ele não implementa a lógica do autor.
+- **Validação dos testes do autor:** os 43 testes de `test:author` passaram contra uma implementação descartável, mantida fora do repositório, só para confirmar que os testes podem ser cumpridos. No repositório, todos falham com `not implemented`, como esperado.
