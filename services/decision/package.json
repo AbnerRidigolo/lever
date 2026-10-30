@@ -1,0 +1,43 @@
+{
+  "name": "@lever/decision",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Lever decision service: environment config, SSE stream and remote evaluation",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsx watch --env-file-if-exists=../../.env --import ./src/telemetry.ts src/main.ts",
+    "start": "node --env-file-if-exists=../../.env --import ./dist/telemetry.js dist/main.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run --coverage",
+    "test:author": "vitest run --config vitest.author.config.ts",
+    "api-key:create": "tsx --env-file-if-exists=../../.env src/cli/create-api-key.ts"
+  },
+  "dependencies": {
+    "@fastify/otel": "0.21.2",
+    "@lever/db": "workspace:*",
+    "@lever/schemas": "workspace:*",
+    "@opentelemetry/api": "1.9.1",
+    "@opentelemetry/exporter-trace-otlp-http": "0.223.0",
+    "@opentelemetry/instrumentation-http": "0.223.0",
+    "@opentelemetry/sdk-node": "0.223.0",
+    "drizzle-orm": "0.45.4",
+    "fastify": "5.12.7",
+    "fastify-plugin": "6.0.1",
+    "pino": "10.3.1",
+    "postgres": "3.4.9",
+    "prom-client": "15.1.3",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@lever/config": "workspace:*",
+    "@testcontainers/postgresql": "12.2.1",
+    "@types/node": "24.19.2",
+    "@vitest/coverage-v8": "5.0.5",
+    "eslint": "10.12.0",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
+  }
+}

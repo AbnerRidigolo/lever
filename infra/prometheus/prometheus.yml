@@ -7,8 +7,9 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 
-  # Enabled by the `decision` worktree once services/decision exposes /metrics.
-  # - job_name: decision
-  #   metrics_path: /metrics
-  #   static_configs:
-  #     - targets: ['host.docker.internal:4000']
+  # services/decision running on the host (pnpm --filter @lever/decision dev or start).
+  # Change the port here if you change DECISION_PORT.
+  - job_name: decision
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['host.docker.internal:4000']
