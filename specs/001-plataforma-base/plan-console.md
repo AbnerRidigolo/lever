@@ -5,7 +5,7 @@
 | Spec     | `specs/001-plataforma-base/spec.md`                                   |
 | Etapa    | `console` (seção 11, ordem 1)                                         |
 | Worktree | `../lever-console`, branch `feat/console`                             |
-| Status   | Aguardando aprovação do autor                                         |
+| Status   | Aprovado pelo autor em 30/10/2026                                     |
 | Escopo   | `apps/console`, mais os ajustes fora dele listados na seção 3 (D2–D4) |
 
 ## 1. O que esta etapa entrega

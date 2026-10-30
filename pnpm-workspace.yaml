@@ -3,6 +3,7 @@ packages:
   - services/*
   - packages/*
 
+# (unrs-resolver: optional native resolver of eslint-config-next, also ships prebuilt binaries.)
 # Only install versions published at least two weeks ago (in minutes).
 minimumReleaseAge: 20160
 
@@ -14,3 +15,4 @@ allowBuilds:
   esbuild: false
   protobufjs: false
   ssh2: false
+  unrs-resolver: false
