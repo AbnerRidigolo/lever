@@ -8,6 +8,7 @@ import { loadEnvironmentConfig } from './config/load-config.js';
 import { loadDecisionEnv } from './env.js';
 import { authorEvaluator } from './evaluator.js';
 import { createLogger } from './logger.js';
+import { withTimeout } from './timeout.js';
 
 const env = loadDecisionEnv();
 const logger = createLogger(env.LOG_LEVEL);
@@ -29,8 +30,9 @@ async function shutdown(signal: string): Promise<void> {
   logger.info({ signal }, 'shutting down');
   try {
     await app.close();
-    await listener?.close();
-    await database.close();
+    // A hung database must not block the shutdown.
+    await withTimeout(listener?.close() ?? Promise.resolve(), 5_000, 'closing the listener');
+    await withTimeout(database.close(), 5_000, 'closing the database pool');
   } catch (error) {
     logger.error({ err: error }, 'error during shutdown');
     process.exitCode = 1;

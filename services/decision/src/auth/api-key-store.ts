@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import type { FastifyBaseLogger } from 'fastify';
 
 import { HttpError } from '../errors.js';
+import { withTimeout } from '../timeout.js';
 
 /** The environment an API key gives access to. */
 export interface AuthenticatedKey {
@@ -50,6 +51,8 @@ export interface ApiKeyStoreOptions {
   logger: FastifyBaseLogger;
   /** How long a validated key is trusted before it is checked again (decision plan, D5). */
   ttlMs: number;
+  /** Maximum wait for a lookup of a key that is not cached; then the request gets a 503. */
+  lookupTimeoutMs?: number;
   /** Minimum interval between two `last_used_at` updates of the same key. */
   touchIntervalMs?: number;
   now?: () => number;
@@ -61,52 +64,82 @@ interface CacheEntry {
 }
 
 /**
- * Resolves API key hashes to environments, with a cache that keeps serving known keys
- * while Postgres is down (NFR-004). Unknown keys are never cached.
+ * Resolves API key hashes to environments.
+ *
+ * Known keys are answered from memory: once an entry expires it is still returned while it is
+ * revalidated in the background (stale-while-revalidate). Requests never wait on Postgres for a
+ * key they already know, so the service keeps working when Postgres is down or slow (NFR-004).
+ * Unknown keys are looked up with a timeout and never cached.
  */
 export class ApiKeyStore {
   private readonly source: ApiKeySource;
   private readonly logger: FastifyBaseLogger;
   private readonly ttlMs: number;
+  private readonly lookupTimeoutMs: number;
   private readonly touchIntervalMs: number;
   private readonly now: () => number;
   private readonly cache = new Map<string, CacheEntry>();
+  private readonly revalidating = new Set<string>();
   private readonly lastTouchedAt = new Map<string, number>();
 
   constructor(options: ApiKeyStoreOptions) {
     this.source = options.source;
     this.logger = options.logger;
     this.ttlMs = options.ttlMs;
+    this.lookupTimeoutMs = options.lookupTimeoutMs ?? 2_000;
     this.touchIntervalMs = options.touchIntervalMs ?? 60_000;
     this.now = options.now ?? Date.now;
   }
 
   async resolve(keyHash: string): Promise<AuthenticatedKey | null> {
     const cached = this.cache.get(keyHash);
-    if (cached !== undefined && cached.expiresAt > this.now()) {
+    if (cached !== undefined) {
+      if (cached.expiresAt <= this.now()) this.revalidate(keyHash);
       this.touch(cached.key);
       return cached.key;
     }
 
     let key: AuthenticatedKey | null;
     try {
-      key = await this.source.find(keyHash);
+      key = await this.find(keyHash);
     } catch (error) {
-      if (cached !== undefined) {
-        this.logger.warn({ err: error }, 'API key lookup failed, using the cached key');
-        return cached.key;
-      }
       this.logger.error({ err: error }, 'API key lookup failed');
       throw new HttpError('service_unavailable', 'Unable to validate the API key');
     }
 
-    if (key === null) {
-      this.cache.delete(keyHash);
-      return null;
+    if (key !== null) {
+      this.cache.set(keyHash, { key, expiresAt: this.now() + this.ttlMs });
+      this.touch(key);
     }
-    this.cache.set(keyHash, { key, expiresAt: this.now() + this.ttlMs });
-    this.touch(key);
     return key;
+  }
+
+  /** Checks an expired key again without blocking requests; one check per key at a time. */
+  private revalidate(keyHash: string): void {
+    if (this.revalidating.has(keyHash)) return;
+    this.revalidating.add(keyHash);
+
+    this.find(keyHash)
+      .then(
+        (key) => {
+          if (key === null) {
+            this.cache.delete(keyHash);
+            return;
+          }
+          this.cache.set(keyHash, { key, expiresAt: this.now() + this.ttlMs });
+        },
+        (error: unknown) => {
+          this.logger.warn(
+            { err: error },
+            'API key revalidation failed, still using the cached key',
+          );
+        },
+      )
+      .finally(() => this.revalidating.delete(keyHash));
+  }
+
+  private find(keyHash: string): Promise<AuthenticatedKey | null> {
+    return withTimeout(this.source.find(keyHash), this.lookupTimeoutMs, 'API key lookup');
   }
 
   /** Updates `last_used_at` at most once per interval, without delaying the request. */

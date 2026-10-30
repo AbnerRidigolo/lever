@@ -87,9 +87,13 @@ describe('API key authentication', () => {
 
     // Still trusted while cached (decision plan, D5)...
     expect(await shortStore.resolve(hashApiKey(revoked.key))).not.toBeNull();
-    // ...and rejected after the TTL.
+    // ...after the TTL the next request is still answered from cache while the key is
+    // checked again in the background; the request after that is rejected.
     now += 1_001;
-    expect(await shortStore.resolve(hashApiKey(revoked.key))).toBeNull();
+    expect(await shortStore.resolve(hashApiKey(revoked.key))).not.toBeNull();
+    await eventually(async () => {
+      expect(await shortStore.resolve(hashApiKey(revoked.key))).toBeNull();
+    });
   });
 
   it('updates last_used_at at most once per interval', async () => {
@@ -139,9 +143,41 @@ describe('API key authentication', () => {
     flaky.down = true;
     now += 5_000;
     expect(await resilientStore.resolve(hashApiKey(key.key))).toEqual(resolved);
+    // The failed background check keeps the key: it is still accepted afterwards.
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(await resilientStore.resolve(hashApiKey(key.key))).toEqual(resolved);
     await expect(
       resilientStore.resolve(hashApiKey(generateApiKey('development').key)),
     ).rejects.toThrow('Unable to validate the API key');
+  });
+
+  it('NFR-004: answers known keys without waiting for a hung database', async () => {
+    let now = 1_000_000;
+    let hung = false;
+    const hangingSource: ApiKeySource = {
+      find: (keyHash) => (hung ? new Promise(() => undefined) : source.find(keyHash)),
+      touch: () => Promise.resolve(),
+    };
+    const store = new ApiKeyStore({
+      source: hangingSource,
+      logger: silentLogger,
+      ttlMs: 1_000,
+      lookupTimeoutMs: 100,
+      now: () => now,
+    });
+    const key = await createApiKey(db, developmentId, 'development');
+    const resolved = await store.resolve(hashApiKey(key.key));
+
+    hung = true;
+    now += 5_000;
+    const started = Date.now();
+    expect(await store.resolve(hashApiKey(key.key))).toEqual(resolved);
+    expect(Date.now() - started).toBeLessThan(50);
+
+    // An unknown key gives up after the lookup timeout.
+    await expect(store.resolve(hashApiKey(generateApiKey('development').key))).rejects.toThrow(
+      'Unable to validate the API key',
+    );
   });
 
   it('fails with 500 when a route forgot the API key preHandler', async () => {
