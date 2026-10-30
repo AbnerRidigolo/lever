@@ -40,6 +40,9 @@ export function registerErrorHandlers(app: FastifyInstance): void {
       if (error.code === 'internal' || error.code === 'service_unavailable') {
         request.log.error({ err: error }, error.message);
       }
+      if (error.code === 'unauthorized') {
+        void reply.header('www-authenticate', 'Bearer');
+      }
       return reply.status(ERROR_HTTP_STATUS[error.code]).send(
         createApiError(error.code, error.message, {
           requestId,

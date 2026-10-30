@@ -1,15 +1,26 @@
+import { createDb } from '@lever/db';
+
 import { buildApp } from './app.js';
+import { ApiKeyStore, createDbApiKeySource } from './auth/api-key-store.js';
 import { loadDecisionEnv } from './env.js';
 import { createLogger } from './logger.js';
 
 const env = loadDecisionEnv();
 const logger = createLogger(env.LOG_LEVEL);
-const app = buildApp({ logger });
+const database = createDb(env.DATABASE_URL);
+
+const apiKeys = new ApiKeyStore({
+  source: createDbApiKeySource(database.db),
+  logger,
+  ttlMs: env.API_KEY_CACHE_TTL_MS,
+});
+const app = buildApp({ logger, apiKeys });
 
 async function shutdown(signal: string): Promise<void> {
   logger.info({ signal }, 'shutting down');
   try {
     await app.close();
+    await database.close();
   } catch (error) {
     logger.error({ err: error }, 'error during shutdown');
     process.exitCode = 1;
@@ -24,5 +35,5 @@ try {
 } catch (error) {
   logger.fatal({ err: error }, 'failed to start');
   process.exitCode = 1;
-  await app.close();
+  await shutdown('startup-failure');
 }

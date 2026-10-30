@@ -4,9 +4,18 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
 import { buildApp } from '../src/app.js';
+import { ApiKeyStore } from '../src/auth/api-key-store.js';
 import { HttpError } from '../src/errors.js';
 
-const app = buildApp({ logger: pino({ level: 'silent' }) });
+const logger = pino({ level: 'silent' });
+const unusedSource = {
+  find: () => Promise.resolve(null),
+  touch: () => Promise.resolve(),
+};
+const app = buildApp({
+  logger,
+  apiKeys: new ApiKeyStore({ source: unusedSource, logger, ttlMs: 1_000 }),
+});
 
 beforeAll(async () => {
   app.get('/test/http-error', () => {
