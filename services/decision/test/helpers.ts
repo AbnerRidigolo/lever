@@ -1,5 +1,6 @@
 import {
   apiKeys,
+  configVersions,
   createDb,
   environments,
   generateApiKey,
@@ -7,7 +8,7 @@ import {
   type Database,
 } from '@lever/db';
 import type { EnvironmentKey } from '@lever/schemas';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, max } from 'drizzle-orm';
 import type { FastifyBaseLogger, FastifyInstance } from 'fastify';
 import { pino } from 'pino';
 import { afterAll, inject } from 'vitest';
@@ -98,4 +99,27 @@ export function createTestApp(db: Database, overrides: Partial<AppDeps> = {}): T
   const app = buildApp(deps);
   afterAll(() => app.close());
   return { app, apiKeys: deps.apiKeys, configStore: deps.configStore };
+}
+
+type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
+
+/**
+ * Changes data and publishes the next configuration version in the same transaction,
+ * as the console does. Returns the published version.
+ */
+export async function publishChange(
+  db: Database,
+  environmentId: string,
+  change: (tx: Transaction) => Promise<unknown>,
+): Promise<number> {
+  return db.transaction(async (tx) => {
+    await change(tx);
+    const [latest] = await tx
+      .select({ version: max(configVersions.version) })
+      .from(configVersions)
+      .where(eq(configVersions.environmentId, environmentId));
+    const version = (latest?.version ?? 0) + 1;
+    await tx.insert(configVersions).values({ environmentId, version });
+    return version;
+  });
 }
