@@ -7,6 +7,8 @@ import { parseEnv } from '@lever/schemas';
 import { createApiKeyArgsSchema, createApiKeyFor } from './api-keys.js';
 
 const { values } = parseArgs({
+  // `pnpm --filter … api-key:create -- --env …` forwards the `--` separator as an argument.
+  args: process.argv.slice(2).filter((arg) => arg !== '--'),
   options: {
     env: { type: 'string' },
     name: { type: 'string' },
