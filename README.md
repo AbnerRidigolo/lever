@@ -48,6 +48,7 @@ Se alguma porta já estiver em uso na sua máquina, troque-a no `.env` (`POSTGRE
 | ---------- | ----------------------- | ----------------------------------------------- |
 | Postgres   | `localhost:5432`        | usuário e senha do `.env`                       |
 | Prometheus | <http://localhost:9090> | —                                               |
+| Mailpit    | <http://localhost:8025> | caixa de entrada local dos links mágicos        |
 | Grafana    | <http://localhost:3001> | `GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD` |
 
 ### O que o seed cria
