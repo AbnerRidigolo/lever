@@ -1,0 +1,36 @@
+{
+  "name": "@lever/sdk",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Lever server-side SDK: local flag and experiment evaluation with cache, stream and fallback",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run --coverage",
+    "test:author": "vitest run --config vitest.author.config.ts",
+    "bench": "vitest bench --run"
+  },
+  "dependencies": {
+    "@lever/evaluation": "workspace:*",
+    "@lever/schemas": "workspace:*"
+  },
+  "devDependencies": {
+    "@lever/config": "workspace:*",
+    "@types/node": "24.19.2",
+    "@vitest/coverage-v8": "5.0.5",
+    "eslint": "10.12.0",
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
+  }
+}

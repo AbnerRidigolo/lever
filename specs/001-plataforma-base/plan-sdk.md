@@ -5,7 +5,7 @@
 | Spec     | `specs/001-plataforma-base/spec.md`                                       |
 | Etapa    | `sdk` (seção 11, ordem 1)                                                 |
 | Worktree | `../lever-sdk`, branch `feat/sdk`                                         |
-| Status   | Aguardando aprovação do autor (D1 a D16)                                  |
+| Status   | Aprovado pelo autor em 03/11/2026 (D1 a D16 aceitas)                     |
 | Escopo   | `packages/sdk`. Nenhum arquivo compartilhado muda sem aprovação (ver D16) |
 
 ## 1. O que esta etapa entrega
