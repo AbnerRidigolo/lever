@@ -5,7 +5,7 @@
 | Spec     | `specs/001-plataforma-base/spec.md`                                                          |
 | Etapa    | `quality` (seção 11, ordem 3), **parcial**                                                   |
 | Worktree | `../lever-quality`, branch `feat/quality`                                                    |
-| Status   | Aguardando aprovação do autor                                                                |
+| Status   | Aprovado pelo autor em 03/11/2026 (D1 a D9 aceitas)                                          |
 | Escopo   | `infra/k6`, `infra/grafana` e a seção de NFRs do `README.md`; o resto está nas decisões (§3) |
 
 ## 1. O que esta etapa entrega
