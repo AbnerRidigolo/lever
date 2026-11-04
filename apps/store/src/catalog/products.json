@@ -1,0 +1,290 @@
+[
+  {
+    "id": "prd-0001",
+    "slug": "cesto-cerrado",
+    "name": "Cesto Cerrado",
+    "description": "Cesto da linha Cerrado, ideal para presentear ou usar no dia a dia.",
+    "category": "casa",
+    "priceCents": 12790,
+    "illustration": {
+      "hue": 165,
+      "shape": "square"
+    }
+  },
+  {
+    "id": "prd-0002",
+    "slug": "almofada-floresta",
+    "name": "Almofada Floresta",
+    "description": "Almofada da linha Floresta, feito para durar e combinar com tudo.",
+    "category": "casa",
+    "priceCents": 17690,
+    "illustration": {
+      "hue": 93,
+      "shape": "circle"
+    }
+  },
+  {
+    "id": "prd-0003",
+    "slug": "quadro-nuvem",
+    "name": "Quadro Nuvem",
+    "description": "Quadro da linha Nuvem, com acabamento artesanal e cores suaves.",
+    "category": "casa",
+    "priceCents": 11090,
+    "illustration": {
+      "hue": 243,
+      "shape": "triangle"
+    }
+  },
+  {
+    "id": "prd-0004",
+    "slug": "espelho-mare",
+    "name": "Espelho Maré",
+    "description": "Espelho da linha Maré, feito para durar e combinar com tudo.",
+    "category": "casa",
+    "priceCents": 2590,
+    "illustration": {
+      "hue": 215,
+      "shape": "circle"
+    }
+  },
+  {
+    "id": "prd-0005",
+    "slug": "vaso-brisa",
+    "name": "Vaso Brisa",
+    "description": "Vaso da linha Brisa, produzido em pequenos lotes fictícios.",
+    "category": "casa",
+    "priceCents": 23490,
+    "illustration": {
+      "hue": 66,
+      "shape": "square"
+    }
+  },
+  {
+    "id": "prd-0006",
+    "slug": "tapete-serra",
+    "name": "Tapete Serra",
+    "description": "Tapete da linha Serra, produzido em pequenos lotes fictícios.",
+    "category": "casa",
+    "priceCents": 24290,
+    "illustration": {
+      "hue": 287,
+      "shape": "circle"
+    }
+  },
+  {
+    "id": "prd-0007",
+    "slug": "bule-aurora",
+    "name": "Bule Aurora",
+    "description": "Bule da linha Aurora, com design simples e materiais resistentes.",
+    "category": "cozinha",
+    "priceCents": 8090,
+    "illustration": {
+      "hue": 66,
+      "shape": "circle"
+    }
+  },
+  {
+    "id": "prd-0008",
+    "slug": "jarra-floresta",
+    "name": "Jarra Floresta",
+    "description": "Jarra da linha Floresta, ideal para presentear ou usar no dia a dia.",
+    "category": "cozinha",
+    "priceCents": 14290,
+    "illustration": {
+      "hue": 136,
+      "shape": "circle"
+    }
+  },
+  {
+    "id": "prd-0009",
+    "slug": "avental-ipe",
+    "name": "Avental Ipê",
+    "description": "Avental da linha Ipê, ideal para presentear ou usar no dia a dia.",
+    "category": "cozinha",
+    "priceCents": 6190,
+    "illustration": {
+      "hue": 342,
+      "shape": "triangle"
+    }
+  },
+  {
+    "id": "prd-0010",
+    "slug": "panela-mare",
+    "name": "Panela Maré",
+    "description": "Panela da linha Maré, leve, prático e fácil de limpar.",
+    "category": "cozinha",
+    "priceCents": 17290,
+    "illustration": {
+      "hue": 20,
+      "shape": "diamond"
+    }
+  },
+  {
+    "id": "prd-0011",
+    "slug": "tabua-cerrado",
+    "name": "Tábua Cerrado",
+    "description": "Tábua da linha Cerrado, com design simples e materiais resistentes.",
+    "category": "cozinha",
+    "priceCents": 17790,
+    "illustration": {
+      "hue": 167,
+      "shape": "triangle"
+    }
+  },
+  {
+    "id": "prd-0012",
+    "slug": "fruteira-lagoa",
+    "name": "Fruteira Lagoa",
+    "description": "Fruteira da linha Lagoa, leve, prático e fácil de limpar.",
+    "category": "cozinha",
+    "priceCents": 18090,
+    "illustration": {
+      "hue": 215,
+      "shape": "circle"
+    }
+  },
+  {
+    "id": "prd-0013",
+    "slug": "caderno-brisa",
+    "name": "Caderno Brisa",
+    "description": "Caderno da linha Brisa, ideal para presentear ou usar no dia a dia.",
+    "category": "escritorio",
+    "priceCents": 13990,
+    "illustration": {
+      "hue": 213,
+      "shape": "square"
+    }
+  },
+  {
+    "id": "prd-0014",
+    "slug": "porta-lapis-orvalho",
+    "name": "Porta-lápis Orvalho",
+    "description": "Porta-lápis da linha Orvalho, leve, prático e fácil de limpar.",
+    "category": "escritorio",
+    "priceCents": 20390,
+    "illustration": {
+      "hue": 236,
+      "shape": "triangle"
+    }
+  },
+  {
+    "id": "prd-0015",
+    "slug": "estojo-lagoa",
+    "name": "Estojo Lagoa",
+    "description": "Estojo da linha Lagoa, com acabamento artesanal e cores suaves.",
+    "category": "escritorio",
+    "priceCents": 3290,
+    "illustration": {
+      "hue": 47,
+      "shape": "square"
+    }
+  },
+  {
+    "id": "prd-0016",
+    "slug": "organizador-ipe",
+    "name": "Organizador Ipê",
+    "description": "Organizador da linha Ipê, produzido em pequenos lotes fictícios.",
+    "category": "escritorio",
+    "priceCents": 14390,
+    "illustration": {
+      "hue": 95,
+      "shape": "diamond"
+    }
+  },
+  {
+    "id": "prd-0017",
+    "slug": "agenda-duna",
+    "name": "Agenda Duna",
+    "description": "Agenda da linha Duna, ideal para presentear ou usar no dia a dia.",
+    "category": "escritorio",
+    "priceCents": 2590,
+    "illustration": {
+      "hue": 350,
+      "shape": "square"
+    }
+  },
+  {
+    "id": "prd-0018",
+    "slug": "bloco-serra",
+    "name": "Bloco Serra",
+    "description": "Bloco da linha Serra, feito para durar e combinar com tudo.",
+    "category": "escritorio",
+    "priceCents": 8990,
+    "illustration": {
+      "hue": 342,
+      "shape": "diamond"
+    }
+  },
+  {
+    "id": "prd-0019",
+    "slug": "lanterna-nuvem",
+    "name": "Lanterna Nuvem",
+    "description": "Lanterna da linha Nuvem, produzido em pequenos lotes fictícios.",
+    "category": "lazer",
+    "priceCents": 23690,
+    "illustration": {
+      "hue": 6,
+      "shape": "diamond"
+    }
+  },
+  {
+    "id": "prd-0020",
+    "slug": "cantil-floresta",
+    "name": "Cantil Floresta",
+    "description": "Cantil da linha Floresta, feito para durar e combinar com tudo.",
+    "category": "lazer",
+    "priceCents": 5390,
+    "illustration": {
+      "hue": 284,
+      "shape": "square"
+    }
+  },
+  {
+    "id": "prd-0021",
+    "slug": "esteira-serra",
+    "name": "Esteira Serra",
+    "description": "Esteira da linha Serra, produzido em pequenos lotes fictícios.",
+    "category": "lazer",
+    "priceCents": 15890,
+    "illustration": {
+      "hue": 74,
+      "shape": "circle"
+    }
+  },
+  {
+    "id": "prd-0022",
+    "slug": "garrafa-lagoa",
+    "name": "Garrafa Lagoa",
+    "description": "Garrafa da linha Lagoa, com acabamento artesanal e cores suaves.",
+    "category": "lazer",
+    "priceCents": 19390,
+    "illustration": {
+      "hue": 302,
+      "shape": "circle"
+    }
+  },
+  {
+    "id": "prd-0023",
+    "slug": "rede-mare",
+    "name": "Rede Maré",
+    "description": "Rede da linha Maré, leve, prático e fácil de limpar.",
+    "category": "lazer",
+    "priceCents": 7790,
+    "illustration": {
+      "hue": 59,
+      "shape": "diamond"
+    }
+  },
+  {
+    "id": "prd-0024",
+    "slug": "toalha-orvalho",
+    "name": "Toalha Orvalho",
+    "description": "Toalha da linha Orvalho, com acabamento artesanal e cores suaves.",
+    "category": "lazer",
+    "priceCents": 2590,
+    "illustration": {
+      "hue": 299,
+      "shape": "diamond"
+    }
+  }
+]
