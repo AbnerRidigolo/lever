@@ -12,8 +12,9 @@ Da spec 001 estão prontos:
 
 - **Etapa `base`:** monorepo, configurações compartilhadas, contratos Zod, banco (schema, migrations e seed) e infraestrutura local.
 - **Etapa `decision`:** o serviço de decisão em [`services/decision`](services/decision/README.md). A atribuição de variantes e a avaliação de regras são do autor e ainda lançam `not implemented`, então `/v1/evaluate` responde 500 até lá.
+- **Etapa `console`:** o console em [`apps/console`](apps/console/README.md), em <http://localhost:3000>.
 
-O SDK, o console e a loja chegam nas próximas worktrees (seção 11 da spec).
+O SDK e a loja chegam nas próximas worktrees (seção 11 da spec).
 
 ## Pré-requisitos
 
@@ -48,6 +49,7 @@ Se alguma porta já estiver em uso na sua máquina, troque-a no `.env` (`POSTGRE
 | ---------- | ----------------------- | ----------------------------------------------- |
 | Postgres   | `localhost:5432`        | usuário e senha do `.env`                       |
 | Prometheus | <http://localhost:9090> | —                                               |
+| Mailpit    | <http://localhost:8025> | caixa de entrada local dos links mágicos        |
 | Grafana    | <http://localhost:3001> | `GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD` |
 
 ### O que o seed cria
@@ -68,6 +70,7 @@ O seed pode ser rodado mais de uma vez sem duplicar dados.
 | `pnpm dev`                 | Sobe todos os apps e serviços em modo de desenvolvimento             |
 | `pnpm build`               | Compila todos os pacotes                                             |
 | `pnpm test`                | Vitest em todo o monorepo                                            |
+| `pnpm test:e2e`            | Playwright do console (precisa de Postgres e Mailpit no ar)          |
 | `pnpm lint`                | ESLint em todo o monorepo                                            |
 | `pnpm typecheck`           | `tsc --noEmit` em todo o monorepo                                    |
 | `pnpm format`              | Formata o código com Prettier (`format:check` só verifica)           |

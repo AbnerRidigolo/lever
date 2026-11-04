@@ -13,6 +13,7 @@ describe('migrations', () => {
       ORDER BY table_name
     `);
     expect(rows.map((row) => row.table_name)).toEqual([
+      'accounts',
       'api_keys',
       'audit_log',
       'config_versions',
@@ -25,15 +26,18 @@ describe('migrations', () => {
       'project_members',
       'projects',
       'segments',
+      'sessions',
       'users',
+      'verification_tokens',
     ]);
   });
 
-  it('give every table id, created_at and updated_at (spec 001, section 7)', async () => {
+  it('give every data model table id, created_at and updated_at (spec 001, section 7)', async () => {
     const rows = await db.execute<{ table_name: string; columns: string[] }>(sql`
       SELECT table_name, array_agg(column_name::text) AS columns
       FROM information_schema.columns
       WHERE table_schema = 'public'
+        AND table_name NOT IN ('accounts', 'sessions', 'verification_tokens')
       GROUP BY table_name
     `);
     expect(rows).toHaveLength(13);

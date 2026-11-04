@@ -16,7 +16,8 @@
     "db:seed": "turbo run db:seed --filter=@lever/db",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "lint:root": "eslint ."
+    "lint:root": "eslint .",
+    "test:e2e": "turbo run test:e2e"
   },
   "devDependencies": {
     "@lever/config": "workspace:*",

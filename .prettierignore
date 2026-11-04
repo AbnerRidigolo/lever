@@ -8,3 +8,7 @@ pnpm-lock.yaml
 AGENTS.md
 docs/ideacao.md
 specs/**/spec.md
+**/.next/
+**/next-env.d.ts
+**/playwright-report/
+**/test-results/

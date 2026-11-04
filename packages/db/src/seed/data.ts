@@ -46,7 +46,7 @@ export const seedAdmin = {
   id: SEED_IDS.adminUser,
   email: 'admin@lever.local',
   name: 'Admin Demo',
-  avatarUrl: null,
+  image: null,
 };
 
 export const seedProject = {

@@ -1,5 +1,6 @@
 export * from './api-keys.js';
 export * from './audit.js';
+export * from './auth.js';
 export * from './config-versions.js';
 export * from './enums.js';
 export * from './experiments.js';
