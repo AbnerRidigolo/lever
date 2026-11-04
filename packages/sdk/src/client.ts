@@ -1,0 +1,251 @@
+import {
+  userContextSchema,
+  type FlagConfig,
+  type FlagType,
+  type FlagValue,
+  type FlagValueByType,
+  type SegmentConfig,
+  type UserContext,
+} from '@lever/schemas';
+
+import { Backoff } from './backoff.js';
+import { ConfigCache, parseStreamMessage } from './config-cache.js';
+import { StreamConnection } from './connection.js';
+import { defaultEvaluator, type Evaluator } from './evaluator.js';
+import { consoleLogger, OncePerKey, type LeverLogger } from './logger.js';
+import {
+  DEFAULT_READY_TIMEOUT_MS,
+  resolveOptions,
+  type LeverClientOptions,
+  type ResolvedOptions,
+} from './options.js';
+import type { SseMessage } from './sse.js';
+
+export type ReadyResult = 'ready' | 'timeout' | 'closed';
+
+export interface LeverClient {
+  /** Resolves when the first valid configuration arrives, or on timeout. Never rejects (D2). */
+  ready(options?: { timeoutMs?: number }): Promise<ReadyResult>;
+  /** Value of a flag for the user, or the default (AC-5.1, D7). Never throws. */
+  getFlag(key: string, user: UserContext, defaultValue: boolean): boolean;
+  getFlag(key: string, user: UserContext, defaultValue: string): string;
+  getFlag(key: string, user: UserContext, defaultValue: number): number;
+  getFlag<T extends FlagValueByType['json']>(key: string, user: UserContext, defaultValue: T): T;
+  /** Variant key of the user (AC-5.2); null without config or for an unknown experiment (D6). */
+  getVariant(key: string, user: UserContext): string | null;
+  /** Stops the stream and timers. Evaluations keep using the last configuration. */
+  close(): Promise<void>;
+}
+
+/** Injected by the tests only; the public client always uses the defaults (sdk plan, D13). */
+export interface ClientDeps {
+  evaluator: Evaluator;
+  now: () => number;
+  random: () => number;
+}
+
+export const defaultDeps: ClientDeps = {
+  evaluator: defaultEvaluator,
+  now: Date.now,
+  random: Math.random,
+};
+
+function matchesFlagType(type: FlagType, value: FlagValue): boolean {
+  switch (type) {
+    case 'boolean':
+      return typeof value === 'boolean';
+    case 'string':
+      return typeof value === 'string';
+    case 'number':
+      return typeof value === 'number';
+    case 'json':
+      return typeof value === 'object' && value !== null;
+  }
+}
+
+class Client implements LeverClient {
+  private readonly logger: LeverLogger;
+  private readonly cache: ConfigCache;
+  private readonly connection: StreamConnection;
+  private readonly warned = new OncePerKey();
+  private readonly readyWaiters = new Set<(result: ReadyResult) => void>();
+  private closed = false;
+
+  constructor(
+    options: ResolvedOptions,
+    private readonly deps: ClientDeps,
+  ) {
+    this.logger = options.logger ?? consoleLogger;
+    this.cache = new ConfigCache(deps.now);
+    this.connection = new StreamConnection({
+      baseUrl: options.baseUrl,
+      apiKey: options.apiKey,
+      heartbeatTimeoutMs: options.heartbeatTimeoutMs,
+      backoff: new Backoff(options.backoff, deps.random),
+      logger: this.logger,
+      onMessage: (message) => this.handleMessage(message),
+    });
+    this.connection.start();
+  }
+
+  ready({
+    timeoutMs = DEFAULT_READY_TIMEOUT_MS,
+  }: { timeoutMs?: number } = {}): Promise<ReadyResult> {
+    if (this.closed) return Promise.resolve('closed');
+    if (this.cache.current !== null) return Promise.resolve('ready');
+    return new Promise((resolve) => {
+      const finish = (result: ReadyResult): void => {
+        clearTimeout(timer);
+        this.readyWaiters.delete(finish);
+        resolve(result);
+      };
+      const timer = setTimeout(() => {
+        finish('timeout');
+      }, timeoutMs);
+      this.readyWaiters.add(finish);
+    });
+  }
+
+  getFlag(key: string, user: UserContext, defaultValue: boolean): boolean;
+  getFlag(key: string, user: UserContext, defaultValue: string): string;
+  getFlag(key: string, user: UserContext, defaultValue: number): number;
+  getFlag<T extends FlagValueByType['json']>(key: string, user: UserContext, defaultValue: T): T;
+  getFlag(key: string, user: UserContext, defaultValue: FlagValue): FlagValue {
+    if (!this.isValidUser(user)) return defaultValue;
+    const loaded = this.cache.current;
+    if (loaded === null) return defaultValue;
+
+    const flag = loaded.flags.get(key);
+    if (flag === undefined) {
+      this.warnOnce(`flag:${key}`, { flagKey: key }, 'unknown flag; serving the default value');
+      return defaultValue;
+    }
+    if (!matchesFlagType(flag.type, defaultValue)) {
+      this.warnOnce(
+        `flag-type:${key}`,
+        { flagKey: key, flagType: flag.type },
+        'default value does not match the flag type; serving the default value',
+      );
+      return defaultValue;
+    }
+
+    return this.evaluateFlag(flag, user, loaded.segments, defaultValue);
+  }
+
+  getVariant(key: string, user: UserContext): string | null {
+    if (!this.isValidUser(user)) return null;
+    const loaded = this.cache.current;
+    if (loaded === null) return null;
+
+    const experiment = loaded.experiments.get(key);
+    if (experiment === undefined) {
+      this.warnOnce(`experiment:${key}`, { experimentKey: key }, 'unknown experiment');
+      return null;
+    }
+
+    try {
+      return this.deps.evaluator.evaluateExperiment(experiment, user, loaded.segments);
+    } catch (error) {
+      this.reportEvaluationError(`experiment-error:${key}`, { experimentKey: key }, error);
+      return null;
+    }
+  }
+
+  async close(): Promise<void> {
+    this.closed = true;
+    for (const finish of [...this.readyWaiters]) finish('closed');
+    await this.connection.close();
+  }
+
+  private evaluateFlag(
+    flag: FlagConfig,
+    user: UserContext,
+    segments: ReadonlyMap<string, SegmentConfig>,
+    defaultValue: FlagValue,
+  ): FlagValue {
+    let value: FlagValue;
+    try {
+      value = this.deps.evaluator.evaluateFlag(flag, user, segments);
+    } catch (error) {
+      this.reportEvaluationError(`flag-error:${flag.key}`, { flagKey: flag.key }, error);
+      return defaultValue;
+    }
+    if (!matchesFlagType(flag.type, value)) {
+      this.reportEvaluationError(
+        `flag-error:${flag.key}`,
+        { flagKey: flag.key },
+        new TypeError(`evaluator returned a value that is not of type ${flag.type}`),
+      );
+      return defaultValue;
+    }
+    return value;
+  }
+
+  private handleMessage(message: SseMessage): boolean {
+    const parsed = parseStreamMessage(message);
+    switch (parsed.kind) {
+      case 'ignored':
+        this.logger.debug({ event: parsed.event }, 'unknown stream event ignored');
+        return false;
+      case 'invalid':
+        this.logger.error(
+          { event: parsed.event, reason: parsed.reason },
+          'invalid stream message discarded; keeping the last valid configuration',
+        );
+        return false;
+      case 'ping':
+        this.cache.markFresh();
+        return false;
+      case 'config': {
+        const result = this.cache.apply(parsed.config);
+        if (result === 'applied') {
+          this.logger.info({ version: parsed.config.version }, 'configuration applied');
+          for (const finish of [...this.readyWaiters]) finish('ready');
+        } else if (result === 'older') {
+          this.logger.warn(
+            { version: parsed.config.version, currentVersion: this.cache.current?.version },
+            'older configuration ignored',
+          );
+        }
+        return true;
+      }
+    }
+  }
+
+  private isValidUser(user: UserContext): boolean {
+    if (userContextSchema.safeParse(user).success) return true;
+    this.warnOnce('invalid-user', {}, 'invalid user context; serving the default value');
+    return false;
+  }
+
+  private reportEvaluationError(
+    onceKey: string,
+    fields: Record<string, unknown>,
+    error: unknown,
+  ): void {
+    if (this.warned.first(onceKey)) {
+      this.logger.error({ ...fields, err: error }, 'evaluation failed; serving the default value');
+    }
+  }
+
+  private warnOnce(onceKey: string, fields: Record<string, unknown>, message: string): void {
+    if (this.warned.first(onceKey)) this.logger.warn(fields, message);
+  }
+}
+
+/**
+ * Internal factory with injectable dependencies. Not exported by the package: the tests use it to
+ * run without the author's evaluation (sdk plan, D13).
+ */
+export function createClient(options: LeverClientOptions, deps: ClientDeps): LeverClient {
+  return new Client(resolveOptions(options), deps);
+}
+
+/**
+ * Creates a Lever client (spec 001, US-5). It connects right away and never blocks: before the
+ * first configuration arrives, flags return their defaults and variants return null (AC-5.5).
+ * Evaluation always uses @lever/evaluation, the same code as the decision service (AC-5.8).
+ */
+export function createLeverClient(options: LeverClientOptions): LeverClient {
+  return createClient(options, defaultDeps);
+}
