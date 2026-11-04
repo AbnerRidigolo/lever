@@ -126,3 +126,15 @@ Integração com Vitest e Postgres real via Testcontainers, chamando a camada de
 - **AC-1.1 e AC-1.2 completas:** dependem do SDK e da loja.
 - **AC-2.x, AC-3.2 a 3.4, AC-4.4 e AC-5.x:** dependem da avaliação do autor e do SDK.
 - **`/v1/evaluate`:** segue respondendo 500 até a sua implementação. O console usa só `/v1/config`.
+
+## 8. Execução
+
+Etapa concluída. Desvios e achados:
+
+- **D7 confirmada.** O teste E2E forja uma Server Action com a sessão de um leitor e recebe **403**; sem sessão, **401**.
+- **Deadlock encontrado nos testes.** Com `FOR UPDATE` no ambiente, mutações simultâneas travavam, porque inserir linhas com chave estrangeira já bloqueia o ambiente. Passei a usar `FOR NO KEY UPDATE`.
+- **Login recusado.** No Auth.js v5, `signIn()` lança `AccessDenied` em vez de redirecionar. A tela de login trata o erro e mostra a mensagem.
+- **Formulários.** O React 19 limpa o formulário depois da action, e o usuário perdia o que digitou quando o servidor recusava. Agora o envio é manual e o formulário só é limpo em caso de sucesso.
+- **`packages/db`.** O caminho das migrations deixou de usar `new URL(..., import.meta.url)`, que o bundler do Next tentava resolver como arquivo.
+- **shadcn/ui.** Os componentes foram escritos à mão no estilo do shadcn (Tailwind e `cva`), sem a CLI. Por isso `radix-ui` e `lucide-react` não entraram.
+- **Ambiente local.** O Docker Desktop desta máquina encerra o backend uns 4 minutos depois de iniciar. Os testes foram rodados logo depois de cada reinício.
