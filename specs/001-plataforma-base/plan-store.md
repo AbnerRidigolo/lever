@@ -5,7 +5,7 @@
 | Spec     | `specs/001-plataforma-base/spec.md`                                          |
 | Etapa    | `store` (seção 11, ordem 2)                                                  |
 | Worktree | `../lever-store`, branch `feat/store`                                        |
-| Status   | Aguardando aprovação do autor                                                |
+| Status   | Aprovado pelo autor em 03/11/2026 (D1 a D13 aceitas; respostas na seção 8)   |
 | Escopo   | `apps/store`, mais os ajustes fora dele listados na seção 3 (D13, aprovação) |
 
 ## 0. Observações antes de começar
@@ -86,11 +86,11 @@ Não entram: biblioteca de dados falsos (o gerador do catálogo usa listas de pa
   - **Onde é criado:** em `src/proxy.ts` (o `middleware` renomeado no Next 16). Server Components não podem gravar cookies, então o proxy grava o cookie na resposta **e** o injeta nos cabeçalhos da própria requisição. Assim a primeira visita já é avaliada com o mesmo id que o navegador vai guardar, sem uma segunda requisição e sem trocar de variante no primeiro clique.
 - **D4 — Login fictício e troca de id.**
   - **Contas:** uma lista fixa em `src/accounts/accounts.ts` com 4 contas de demonstração (nomes fictícios, ids `store-account-0001` a `0004`, sem e-mail nem senha). Não toca na tabela `users` do console nem cria migration.
-  - **Entrar:** em `/account`, o usuário escolhe uma conta e confirma; a Server Action valida o id com Zod contra a lista e grava o cookie `lever_account` (`httpOnly`, `SameSite=Lax`, sessão de 7 dias). Sem assinatura: as contas são fictícias e trocar o cookie só troca de conta fictícia. Se preferir, assino com HMAC e uma variável `STORE_SESSION_SECRET`.
+  - **Entrar:** em `/account`, o usuário escolhe uma conta e confirma; a Server Action valida o id com Zod contra a lista e grava o cookie `lever_account` (`httpOnly`, `SameSite=Lax`, sessão de 7 dias). O valor é assinado com HMAC-SHA-256 e a variável `STORE_SESSION_SECRET` (Q2); assinatura inválida vale como "sem conta".
   - **Troca do id (seção 13):** com `lever_account` válido, o `UserContext.id` passa a ser o id da conta; sem ele, é o `lever_uid`. O `lever_uid` não é apagado no login, então ao sair o usuário volta ao id anônimo anterior e às variantes que tinha. Consequência já aceita na spec: a variante pode mudar no login.
   - Carrinho e persona continuam iguais no login e no logout.
 - **D5 — API key e ambiente.**
-  - Variáveis novas, validadas com Zod em `src/server/env.ts`: `LEVER_ADAPTER` (`stub` ou `sdk`; padrão `stub` até a T12, `sdk` depois), `LEVER_DECISION_URL` (padrão `http://localhost:4000`), `LEVER_API_KEY` (obrigatória quando `LEVER_ADAPTER=sdk`), `LEVER_STUB_OVERRIDES` (opcional) e `STORE_PORT` (padrão 3002).
+  - Variáveis novas, validadas com Zod em `src/server/env.ts`: `LEVER_ADAPTER` (`stub` ou `sdk`; padrão `stub` até a T12, `sdk` depois), `LEVER_DECISION_URL` (padrão `http://localhost:4000`), `LEVER_API_KEY` (obrigatória quando `LEVER_ADAPTER=sdk`), `LEVER_STUB_OVERRIDES` (opcional), `STORE_SESSION_SECRET` (pelo menos 16 caracteres, Q2) e `STORE_PORT` (padrão 3002).
   - A key é de **`development`**, porque o `checkout-layout` só está `running` lá no seed. Ela é criada pelo console (página de API keys) ou por `pnpm --filter @lever/decision api-key:create -- --env development --name store`, e copiada para o `.env`. A key nunca vai para o cliente nem para os logs.
   - O E2E com o SDK real cria a própria key no banco de E2E (no `e2e/prepare.ts`, com `generateApiKey` de `@lever/db`, só como dependência de desenvolvimento), como o console já faz com o banco `lever_e2e`.
 - **D6 — Sem piscar a variante e sem cache.**
@@ -203,8 +203,9 @@ Unitários com Vitest (a loja não usa banco, então não há Testcontainers). E
 - **Dashboard do Grafana com as métricas da loja:** worktree `quality`.
 - **Atualização sem recarregar a página:** fora, salvo decisão nova (seção 4).
 
-## 8. Dúvidas em aberto
+## 8. Dúvidas respondidas (03/11/2026)
 
-- **Q1:** abrir o PR só depois do SDK (proposta) ou já com o stub? (D1)
-- **Q2:** assinar o cookie de conta com HMAC ou deixar sem assinatura? (D4)
-- **Q3:** a leitura de "até 5 segundos" como "na próxima requisição" está certa? (seção 4)
+- **Q1:** o PR só é aberto depois do SDK na `main`, já com a T12. Nada é enviado ao GitHub antes disso. (D1)
+- **Q2:** sim, o cookie de conta é assinado com HMAC e `STORE_SESSION_SECRET`, validada com Zod e com valor fictício no `.env.example`. (D4)
+- **Q3:** sim, "até 5 segundos" é na próxima carga da página. (seção 4)
+- **API do SDK** (plano da worktree `sdk`): `createLeverClient({ apiKey, baseUrl, logger? })`, `ready({ timeoutMs })` → `'ready' | 'timeout' | 'closed'`, `getFlag(key, user, default)` (nunca lança), `getVariant(key, user)` → `string | null`, `onExposure(listener)` → função de cancelamento, `getMetrics()` (contadores monotônicos e `configAgeMs`) e `close()`. A interface `LeverAdapter` fica como está; o `sdk-adapter.ts` da T12 converte `configAgeMs` em segundos e `null` no fallback.
