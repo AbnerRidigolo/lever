@@ -11,12 +11,12 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run --coverage",
-    "test:author": "vitest run --config vitest.author.config.ts",
     "api-key:create": "tsx --env-file-if-exists=../../.env src/cli/create-api-key.ts"
   },
   "dependencies": {
     "@fastify/otel": "0.21.2",
     "@lever/db": "workspace:*",
+    "@lever/evaluation": "workspace:*",
     "@lever/schemas": "workspace:*",
     "@opentelemetry/api": "1.9.1",
     "@opentelemetry/exporter-trace-otlp-http": "0.223.0",

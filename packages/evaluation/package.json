@@ -1,0 +1,33 @@
+{
+  "name": "@lever/evaluation",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Flag and experiment evaluation shared by the decision service and the SDK (reserved for the author)",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run --passWithNoTests",
+    "test:author": "vitest run --config vitest.author.config.ts"
+  },
+  "dependencies": {
+    "@lever/schemas": "workspace:*"
+  },
+  "devDependencies": {
+    "@lever/config": "workspace:*",
+    "@types/node": "24.19.2",
+    "eslint": "10.12.0",
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
+  }
+}
