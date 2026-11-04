@@ -1,5 +1,5 @@
 # apps/store
 
-Loja de demonstração (Next.js, App Router) que usa o Lever de verdade: vitrine, produto, carrinho e checkout fictício.
+Loja de demonstração do Lever (Next.js, App Router): vitrine, produto, carrinho e checkout fictício. Spec: [001](../../specs/001-plataforma-base/spec.md). Plano: [`plan-store.md`](../../specs/001-plataforma-base/plan-store.md).
 
-Fase 1 — worktree `store` da spec [001](../../specs/001-plataforma-base/spec.md). Ainda não implementado.
+Em construção na worktree `store`.
