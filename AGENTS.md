@@ -30,6 +30,7 @@ services/
 packages/
   schemas/          Zod — contratos compartilhados (fonte da verdade dos tipos)
   db/               Drizzle — schema, migrations e seeds do Postgres
+  evaluation/       avaliação de flags e experimentos, usada pela decisão e pelo SDK (do autor)
   sdk/              SDK TypeScript publicado no npm (@lever/sdk)
   config/           tsconfig, eslint e prettier compartilhados
 ml/                 (fase 3) Python — treino dos modelos
@@ -77,8 +78,8 @@ pnpm lint && pnpm typecheck  # obrigatório antes de abrir PR
 
 Estas partes são escritas à mão pelo autor do projeto. **Não implemente**, mesmo que pareça óbvio. Você pode criar a assinatura da função com `throw new Error('not implemented: reserved for author')`, os testes a partir da spec e o código ao redor.
 
-- Algoritmo de atribuição de variantes (hash e bucketing) — `services/decision/src/assignment/`
-- Avaliação de regras de segmentação e rollout — `services/decision/src/evaluation/`
+- Algoritmo de atribuição de variantes (hash e bucketing) — `packages/evaluation/src/assignment.ts`
+- Avaliação de regras de segmentação e rollout — `packages/evaluation/src/evaluation.ts`
 - Toda a estatística de experimentos (fase 2)
 - Ranqueamento e lógica do modelo de recomendação (fase 3)
 

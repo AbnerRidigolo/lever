@@ -6,11 +6,11 @@ import type {
   UserContext,
 } from '@lever/schemas';
 
-import { evaluateExperiment, evaluateFlag } from './evaluation/index.js';
+import { evaluateExperiment, evaluateFlag } from '@lever/evaluation';
 
 /**
  * What the service needs from the evaluation code. The service only talks to this interface,
- * so the author's implementation can move to a package shared with the SDK (decision plan, D1).
+ * which keeps the routes testable without the author's implementation (decision plan, D1).
  */
 export interface Evaluator {
   evaluateFlag(
@@ -25,5 +25,5 @@ export interface Evaluator {
   ): string;
 }
 
-/** The author's implementation (reserved, see src/evaluation/). */
+/** The author's implementation (reserved, see packages/evaluation). */
 export const authorEvaluator: Evaluator = { evaluateFlag, evaluateExperiment };

@@ -1,7 +1,7 @@
 import type { SegmentCondition, SegmentConfig, UserContext } from '@lever/schemas';
 import { describe, expect, it } from 'vitest';
 
-import { evaluateExperiment, evaluateFlag, matchesSegment } from '../../src/evaluation/index.js';
+import { evaluateExperiment, evaluateFlag, matchesSegment } from '../../src/evaluation.js';
 import { booleanFlag, brMobile, experiment, segmentsWith } from './fixtures.js';
 
 function user(attributes: UserContext['attributes'], id = 'user-1'): UserContext {

@@ -36,13 +36,12 @@ Variáveis de ambiente (lidas do `.env` da raiz): `DATABASE_URL`, `DECISION_HOST
 - **Configuração:** carregada do Postgres no primeiro uso de cada ambiente, num snapshot só de leitura, e validada com `environmentConfigSchema` antes de entrar no cache. O cache nunca volta para uma versão mais antiga.
 - **Propagação (FR-008):** o serviço escuta o canal `lever_config_changes`, que o trigger de `config_versions` notifica, e recarrega só o ambiente afetado. Depois de uma reconexão, recarrega todos.
 - **Postgres fora do ar (NFR-004):** a configuração e as keys já conhecidas continuam sendo servidas da memória. Uma key em cache é revalidada em segundo plano depois de `API_KEY_CACHE_TTL_MS`, então uma key revogada deixa de funcionar em até 30 s, mais uma requisição. Uma key desconhecida espera no máximo 2 s pelo banco e então recebe 503.
-- **Avaliação:** o serviço usa a interface `Evaluator` (`src/evaluator.ts`). A implementação fica em `src/assignment/` e `src/evaluation/`, **reservadas ao autor**, que hoje lançam `not implemented`.
+- **Avaliação:** o serviço usa a interface `Evaluator` (`src/evaluator.ts`). A implementação fica em [`packages/evaluation`](../../packages/evaluation/README.md), **reservada ao autor** e compartilhada com o SDK; hoje ela lança `not implemented`.
 
 ## Testes
 
 ```bash
 pnpm --filter @lever/decision test          # integração com Postgres real (Testcontainers) e cobertura
-pnpm --filter @lever/decision test:author   # testes da spec para as partes reservadas ao autor
 ```
 
-`test:author` cobre FR-004, AC-2.1 a 2.3, AC-3.2 a 3.5 e AC-4.1 a 4.4. Ele fica fora do `pnpm test` até a implementação do autor existir. Quando todos passarem, mova os arquivos para a suíte principal e tire `src/assignment` e `src/evaluation` da exclusão de cobertura em `vitest.config.ts`.
+Os testes da spec para a avaliação ficam em `packages/evaluation` (`pnpm --filter @lever/evaluation test:author`).

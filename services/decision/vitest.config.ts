@@ -14,13 +14,7 @@ export default defineConfig({
       provider: 'v8',
       include: ['src/**/*.ts'],
       // Reserved for the author or only run as entry points (decision plan, D7).
-      exclude: [
-        'src/assignment/**',
-        'src/evaluation/**',
-        'src/main.ts',
-        'src/telemetry.ts',
-        'src/cli/**',
-      ],
+      exclude: ['src/main.ts', 'src/telemetry.ts', 'src/cli/**'],
       thresholds: { lines: 80, functions: 80, branches: 80, statements: 80 },
     },
   },

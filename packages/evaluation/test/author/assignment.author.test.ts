@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { assignVariant, bucketOf } from '../../src/assignment/index.js';
-import { evaluateExperiment, evaluateFlag } from '../../src/evaluation/index.js';
+import { assignVariant, bucketOf } from '../../src/assignment.js';
+import { evaluateExperiment, evaluateFlag } from '../../src/evaluation.js';
 import {
   booleanFlag,
   experiment,
