@@ -1,5 +1,7 @@
 import {
   userContextSchema,
+  type ExperimentConfig,
+  type ExposureEvent,
   type FlagConfig,
   type FlagType,
   type FlagValue,
@@ -12,6 +14,7 @@ import { Backoff } from './backoff.js';
 import { ConfigCache, parseStreamMessage } from './config-cache.js';
 import { StreamConnection } from './connection.js';
 import { defaultEvaluator, type Evaluator } from './evaluator.js';
+import { ExposureHub, type ExposureListener } from './exposure.js';
 import { consoleLogger, OncePerKey, type LeverLogger } from './logger.js';
 import {
   DEFAULT_READY_TIMEOUT_MS,
@@ -33,6 +36,11 @@ export interface LeverClient {
   getFlag<T extends FlagValueByType['json']>(key: string, user: UserContext, defaultValue: T): T;
   /** Variant key of the user (AC-5.2); null without config or for an unknown experiment (D6). */
   getVariant(key: string, user: UserContext): string | null;
+  /**
+   * Adds a listener called on every variant assignment (AC-5.7): a running experiment and a user
+   * inside its segment (D10). Returns the function that removes the listener.
+   */
+  onExposure(listener: (event: ExposureEvent) => void): () => void;
   /** Stops the stream and timers. Evaluations keep using the last configuration. */
   close(): Promise<void>;
 }
@@ -67,6 +75,7 @@ class Client implements LeverClient {
   private readonly logger: LeverLogger;
   private readonly cache: ConfigCache;
   private readonly connection: StreamConnection;
+  private readonly exposures: ExposureHub;
   private readonly warned = new OncePerKey();
   private readonly readyWaiters = new Set<(result: ReadyResult) => void>();
   private closed = false;
@@ -77,6 +86,7 @@ class Client implements LeverClient {
   ) {
     this.logger = options.logger ?? consoleLogger;
     this.cache = new ConfigCache(deps.now);
+    this.exposures = new ExposureHub(this.logger);
     this.connection = new StreamConnection({
       baseUrl: options.baseUrl,
       apiKey: options.apiKey,
@@ -143,12 +153,28 @@ class Client implements LeverClient {
       return null;
     }
 
+    let variantKey: string;
     try {
-      return this.deps.evaluator.evaluateExperiment(experiment, user, loaded.segments);
+      variantKey = this.deps.evaluator.evaluateExperiment(experiment, user, loaded.segments);
     } catch (error) {
       this.reportEvaluationError(`experiment-error:${key}`, { experimentKey: key }, error);
       return null;
     }
+    if (this.isAssigned(experiment, user, loaded.segments)) {
+      this.exposures.emit({
+        type: 'exposure',
+        experimentKey: experiment.key,
+        variantKey,
+        userId: user.id,
+        configVersion: loaded.version,
+        timestamp: new Date(this.deps.now()).toISOString(),
+      });
+    }
+    return variantKey;
+  }
+
+  onExposure(listener: ExposureListener): () => void {
+    return this.exposures.add(listener);
   }
 
   async close(): Promise<void> {
@@ -179,6 +205,33 @@ class Client implements LeverClient {
       return defaultValue;
     }
     return value;
+  }
+
+  /**
+   * Whether the user takes part in the experiment, so the assignment is an exposure (D10): the
+   * experiment is running and the user is inside its segment, as decided by the author's
+   * `matchesSegment`. Other users get the control variant but are not exposed.
+   */
+  private isAssigned(
+    experiment: ExperimentConfig,
+    user: UserContext,
+    segments: ReadonlyMap<string, SegmentConfig>,
+  ): boolean {
+    if (experiment.status !== 'running') return false;
+    if (experiment.segmentKey === null) return true;
+    const segment = segments.get(experiment.segmentKey);
+    // The config schema guarantees the segment exists; this only guards the type.
+    if (segment === undefined) return false;
+    try {
+      return this.deps.evaluator.matchesSegment(segment, user);
+    } catch (error) {
+      this.reportEvaluationError(
+        `segment-error:${experiment.key}`,
+        { experimentKey: experiment.key, segmentKey: segment.key },
+        error,
+      );
+      return false;
+    }
   }
 
   private handleMessage(message: SseMessage): boolean {
