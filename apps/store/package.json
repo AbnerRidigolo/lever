@@ -1,0 +1,51 @@
+{
+  "name": "@lever/store",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Lever demo store: storefront, cart and checkout driven by Lever flags and experiments",
+  "type": "module",
+  "scripts": {
+    "build": "next build",
+    "dev": "node --env-file-if-exists=../../.env node_modules/next/dist/bin/next dev --port 3002",
+    "start": "node --env-file-if-exists=../../.env node_modules/next/dist/bin/next start --port 3002",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:e2e": "playwright test && pnpm run test:e2e:sdk",
+    "catalog:generate": "tsx scripts/generate-catalog.ts",
+    "test:e2e:sdk": "tsx --env-file-if-exists=../../.env e2e/prepare.ts && playwright test -c playwright.sdk.config.ts"
+  },
+  "dependencies": {
+    "@lever/schemas": "workspace:*",
+    "@lever/sdk": "workspace:*",
+    "@opentelemetry/exporter-trace-otlp-http": "0.223.0",
+    "@opentelemetry/instrumentation-http": "0.223.0",
+    "@opentelemetry/sdk-node": "0.223.0",
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "next": "16.4.2",
+    "pino": "10.3.1",
+    "prom-client": "15.1.3",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "tailwind-merge": "3.7.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@lever/config": "workspace:*",
+    "@lever/db": "workspace:*",
+    "@playwright/test": "1.64.1",
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/node": "24.19.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "drizzle-orm": "0.45.4",
+    "eslint": "10.12.0",
+    "eslint-config-next": "16.4.2",
+    "postgres": "3.4.9",
+    "tailwindcss": "4.3.3",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
+  }
+}
