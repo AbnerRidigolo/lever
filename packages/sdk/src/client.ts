@@ -16,6 +16,7 @@ import { StreamConnection } from './connection.js';
 import { defaultEvaluator, type Evaluator } from './evaluator.js';
 import { ExposureHub, type ExposureListener } from './exposure.js';
 import { consoleLogger, OncePerKey, type LeverLogger } from './logger.js';
+import { ClientCounters, type LeverClientMetrics } from './metrics.js';
 import {
   DEFAULT_READY_TIMEOUT_MS,
   resolveOptions,
@@ -41,6 +42,8 @@ export interface LeverClient {
    * inside its segment (D10). Returns the function that removes the listener.
    */
   onExposure(listener: (event: ExposureEvent) => void): () => void;
+  /** Counters and config age for the app to expose (spec 001 section 10, D11). */
+  getMetrics(): LeverClientMetrics;
   /** Stops the stream and timers. Evaluations keep using the last configuration. */
   close(): Promise<void>;
 }
@@ -76,6 +79,7 @@ class Client implements LeverClient {
   private readonly cache: ConfigCache;
   private readonly connection: StreamConnection;
   private readonly exposures: ExposureHub;
+  private readonly counters = new ClientCounters();
   private readonly warned = new OncePerKey();
   private readonly readyWaiters = new Set<(result: ReadyResult) => void>();
   private closed = false;
@@ -121,6 +125,7 @@ class Client implements LeverClient {
   getFlag(key: string, user: UserContext, defaultValue: number): number;
   getFlag<T extends FlagValueByType['json']>(key: string, user: UserContext, defaultValue: T): T;
   getFlag(key: string, user: UserContext, defaultValue: FlagValue): FlagValue {
+    this.counters.flagEvaluations += 1;
     if (!this.isValidUser(user)) return defaultValue;
     const loaded = this.cache.current;
     if (loaded === null) return defaultValue;
@@ -143,6 +148,7 @@ class Client implements LeverClient {
   }
 
   getVariant(key: string, user: UserContext): string | null {
+    this.counters.experimentEvaluations += 1;
     if (!this.isValidUser(user)) return null;
     const loaded = this.cache.current;
     if (loaded === null) return null;
@@ -175,6 +181,19 @@ class Client implements LeverClient {
 
   onExposure(listener: ExposureListener): () => void {
     return this.exposures.add(listener);
+  }
+
+  getMetrics(): LeverClientMetrics {
+    return {
+      flagEvaluations: this.counters.flagEvaluations,
+      experimentEvaluations: this.counters.experimentEvaluations,
+      evaluationErrors: this.counters.evaluationErrors,
+      invalidMessages: this.counters.invalidMessages,
+      reconnects: this.connection.reconnects,
+      configVersion: this.cache.current?.version ?? null,
+      configAgeMs: this.cache.ageMs(),
+      connection: this.connection.state,
+    };
   }
 
   async close(): Promise<void> {
@@ -241,6 +260,7 @@ class Client implements LeverClient {
         this.logger.debug({ event: parsed.event }, 'unknown stream event ignored');
         return false;
       case 'invalid':
+        this.counters.invalidMessages += 1;
         this.logger.error(
           { event: parsed.event, reason: parsed.reason },
           'invalid stream message discarded; keeping the last valid configuration',
@@ -276,6 +296,7 @@ class Client implements LeverClient {
     fields: Record<string, unknown>,
     error: unknown,
   ): void {
+    this.counters.evaluationErrors += 1;
     if (this.warned.first(onceKey)) {
       this.logger.error({ ...fields, err: error }, 'evaluation failed; serving the default value');
     }
