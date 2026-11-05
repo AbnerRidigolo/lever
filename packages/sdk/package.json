@@ -28,8 +28,12 @@
   },
   "devDependencies": {
     "@lever/config": "workspace:*",
+    "@lever/db": "workspace:*",
+    "@lever/decision": "workspace:*",
+    "@testcontainers/postgresql": "12.2.1",
     "@types/node": "24.19.2",
     "@vitest/coverage-v8": "5.0.5",
+    "drizzle-orm": "0.45.4",
     "eslint": "10.12.0",
     "typescript": "6.0.3",
     "vitest": "5.0.5"

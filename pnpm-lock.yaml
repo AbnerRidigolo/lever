@@ -409,12 +409,24 @@ importers:
       '@lever/config':
         specifier: workspace:*
         version: link:../config
+      '@lever/db':
+        specifier: workspace:*
+        version: link:../db
+      '@lever/decision':
+        specifier: workspace:*
+        version: link:../../services/decision
+      '@testcontainers/postgresql':
+        specifier: 12.2.1
+        version: 12.2.1
       '@types/node':
         specifier: 24.19.2
         version: 24.19.2
       '@vitest/coverage-v8':
         specifier: 5.0.5
         version: 5.0.5(vitest@5.0.5)
+      drizzle-orm:
+        specifier: 0.45.4
+        version: 0.45.4(@opentelemetry/api@1.9.1)(postgres@3.4.9)
       eslint:
         specifier: 10.12.0
         version: 10.12.0(jiti@2.7.0)
