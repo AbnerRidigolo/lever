@@ -5,8 +5,9 @@ import { getIdentity } from '@/server/context';
 import { COOKIES, parseJsonCookie } from '@/server/cookies';
 import { storeEnv } from '@/server/env';
 import { logger } from '@/server/logger';
+import { storeMetrics } from '@/server/metrics';
 
-import { noopObserver, type LeverAdapter } from './adapter';
+import type { LeverAdapter } from './adapter';
 import { withSafety } from './decorate';
 import { logExposure } from './exposure';
 import {
@@ -33,7 +34,10 @@ export const getLever = cache(async (): Promise<LeverAdapter> => {
       logExposure(logger, event);
     },
   });
-  return withSafety(adapter, { logger, observer: noopObserver });
+  const metrics = storeMetrics();
+  const lever = withSafety(adapter, { logger, observer: metrics.observer });
+  metrics.setConfigAgeSource(() => lever.configAgeSeconds());
+  return lever;
 });
 
 /** Whether `new-banner` is on for the current user (AC-8.2). One evaluation per request. */
