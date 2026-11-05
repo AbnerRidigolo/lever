@@ -103,6 +103,22 @@ specs/              specs do SDD
 docs/               ideação e ADRs
 ```
 
+## Medições dos requisitos não funcionais
+
+Seção 12 da [spec 001](specs/001-plataforma-base/spec.md): as NFR-001 a NFR-005 medidas e registradas aqui. O plano das medições está em [`plan-quality.md`](specs/001-plataforma-base/plan-quality.md).
+
+| NFR     | Meta                                              | Como foi medido                                                                        | Resultado                                                                                                        | Data       | Commit    | Status              |
+| ------- | ------------------------------------------------- | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ---------- | --------- | ------------------- |
+| NFR-001 | Avaliação local no SDK: p99 abaixo de 1 ms        | Vitest bench no `packages/sdk`                                                         | —                                                                                                                | —          | —         | pendente (SDK)      |
+| NFR-002 | Avaliação remota: p99 abaixo de 20 ms a 500 req/s | `k6 run -e SCENARIO=evaluate infra/k6/evaluate.js`                                     | Não medida: `POST /v1/evaluate` responde 500 até a avaliação do autor existir (`packages/evaluation`)            | 04/11/2026 | `7df9a37` | pendente            |
+| NFR-002 | Referência: `GET /v1/config` nas mesmas condições | `k6 run -e SCENARIO=config infra/k6/evaluate.js`                                       | p50 0,51 ms, p95 1,74 ms, **p99 3,82 ms**, máx. 56,69 ms; 0% de falhas e nenhuma iteração descartada a 500 req/s | 04/11/2026 | `7df9a37` | referência          |
+| NFR-003 | Propagação do console até o SDK abaixo de 5 s     | E2E `apps/console/e2e/flag.spec.ts` (console até o `/v1/config` do serviço de decisão) | **182 ms** (anotação `NFR-003` do Playwright)                                                                    | 04/11/2026 | `7df9a37` | parcial (sem o SDK) |
+| NFR-004 | Decisão continua servindo se o Postgres cair      | `services/decision/test/resilience.test.ts` (para o contêiner do Postgres)             | Passa: `/v1/config`, a key em cache e o stream continuam com a última configuração                               | 04/11/2026 | `0b64748` | atendido            |
+| NFR-005 | Cobertura acima de 80% em `services/decision`     | `pnpm --filter @lever/decision test` (Vitest com cobertura v8 e limite de 80%)         | Linhas 98,56%, instruções 96,98%, funções 94,73%, ramos 91,93%                                                   | 04/11/2026 | `0b64748` | atendido            |
+| NFR-005 | Cobertura acima de 80% em `packages/sdk`          | Vitest com cobertura no `packages/sdk`                                                 | —                                                                                                                | —          | —         | pendente (SDK)      |
+
+**Ambiente das medições:** notebook com Windows 11, Intel Core i7-13650HX (14 núcleos, 20 threads) e 32 GB de RAM, Node 24.18.0. O k6 v2.2.0 (binário local) rodou na mesma máquina que o serviço. O serviço de decisão rodou compilado (`node dist/main.js`) na porta 4200, com `LOG_LEVEL=warn` e sem traces (`OTEL_EXPORTER_OTLP_ENDPOINT` vazio). O Postgres rodou no Docker Desktop (`pgvector/pgvector:0.8.7-pg17-trixie`), com o seed. Cada execução do k6 teve 15 s de aquecimento a 100 req/s e 60 s medidos a 500 req/s. A máquina tinha outros contêineres no ar, sem relação com o Lever. Os números são locais e servem para comparar execuções na mesma máquina.
+
 ## CI
 
 O GitHub Actions roda `install`, `format:check`, `lint`, `typecheck` e `test` em todo push e pull request (`.github/workflows/ci.yml`).
