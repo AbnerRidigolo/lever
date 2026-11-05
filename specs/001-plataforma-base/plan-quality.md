@@ -182,3 +182,35 @@ Os testes com Testcontainers (`pnpm test`, cobertura e resiliência) também pre
 - **Métricas do SDK na loja** (avaliações por segundo e idade do cache, seção 10) e os painéis correspondentes: chegam com o SDK e a loja.
 - **Traces "do console ao Postgres":** mesmo com a D9, faltam os spans do driver `postgres` (ver o limite na D9).
 - **Nome legível do ambiente no dashboard:** depende da métrica de informação sugerida na D6.
+
+## 8. Execução (04/11/2026)
+
+Etapa parcial concluída, com T1 a T7 feitas e as medições registradas no README. Achados e desvios em relação ao plano:
+
+- **Limite de `checks`.** O plano previa `rate==1`. Usei `rate>0.999`, igual ao limite de falhas HTTP, para que uma única falha isolada não derrube a medição sem aparecer também em `http_req_failed`.
+- **Key fora da linha de comando.** O k6 lê `LEVER_API_KEY` do ambiente do shell. Com `-e LEVER_API_KEY`, a variável ficaria visível na linha de comando do processo. Um `-e LEVER_API_KEY` sem valor também zera a variável, então o README do k6 orienta a exportá-la antes.
+- **Resumo do k6.** O `handleSummary` não cria a pasta de resultados, então `infra/k6/results/.gitkeep` foi versionado e o `.gitignore` local ignora o resto. Quando o `setup()` aborta, o resumo diz "measured no requests" em vez de listar limites que passariam sem dados.
+- **Docker confirmou a D2.** Um teste curto com `grafana/k6:2.2.0` pelo Docker Desktop (50 req/s, `host.docker.internal`) **falhou** no p99 de 20 ms. O binário local, nas mesmas condições, ficou abaixo de 3 ms. A medição oficial usa o binário.
+- **Dashboard.** Gerado à mão com `schemaVersion` 41, que o Grafana 13.2.4 carrega e migra sem erro. Conferido assim:
+  - num Grafana e num Prometheus temporários, fora do projeto `lever` compartilhado, o provisionamento carregou o dashboard como `Lever / Decisão`;
+  - as 14 consultas rodaram na API do Prometheus sem erro, e todos os painéis mostraram dados com tráfego do k6.
+
+  No painel de latência, entrou `axisSoftMax` de 25 ms, para a linha de 20 ms aparecer mesmo com latências baixas. As mensagens de erro de provisionamento de `plugins` e `alerting` no log do Grafana já existiam (as pastas não existem) e não têm relação com o dashboard.
+
+- **Teste do dashboard (D5).** São 8 testes em `services/decision/test/dashboard.test.ts`. Uma métrica renomeada no JSON faz 3 deles falharem, o que foi conferido e revertido.
+- **Tempo (D9).** `grafana/tempo:3.1.0` com configuração mínima, só com o receptor OTLP HTTP e armazenamento local, sem o metrics-generator. Validado num projeto Compose separado: o serviço de decisão com `OTEL_EXPORTER_OTLP_ENDPOINT` enviou traces de `GET /v1/config`, e a busca TraceQL e o health do datasource no Grafana responderam. Com `log_level: warn`, o Tempo registra "no jobs found" do agendador quando está ocioso; isso é ruído, não erro. Entraram `TEMPO_PORT` e `OTLP_HTTP_PORT` no `.env.example`.
+- **`.env` local da worktree.** O `.env` era anterior ao console e não tinha `AUTH_SECRET`, `EMAIL_SERVER` e as outras variáveis, então o E2E não subia. Completei-o com os valores fictícios do `.env.example`. O arquivo não é versionado.
+- **Ambiente compartilhado.** O serviço de decisão das medições rodou na porta 4200, contra o banco `lever` do compose, que não foi recriado. O E2E recriou só o `lever_e2e`, como sempre faz. A key do k6 ficou só numa variável de ambiente e num arquivo temporário fora do repositório.
+- **Docker Desktop.** O backend caiu várias vezes, uns 4 minutos depois de iniciar. As medições e os testes rodaram em janelas separadas, logo depois de cada reinício.
+
+### Resultados
+
+| Verificação                                        | Resultado                                                                         |
+| -------------------------------------------------- | --------------------------------------------------------------------------------- |
+| k6 `config` (500 req/s, 60 s)                      | p50 0,51 ms, p95 1,74 ms, p99 3,82 ms, máx. 56,69 ms; 0% de falhas; 0 descartadas |
+| k6 `evaluate`                                      | Abortado no `setup()` (código 108): avaliação ainda não implementada              |
+| E2E `flag.spec.ts` (3 testes)                      | Passa; NFR-003 parcial de 182 ms                                                  |
+| `resilience.test.ts`                               | Passa (NFR-004)                                                                   |
+| Cobertura de `services/decision`                   | Linhas 98,56%, instruções 96,98%, funções 94,73%, ramos 91,93%                    |
+| `pnpm lint`, `pnpm typecheck`, `pnpm format:check` | Passam                                                                            |
+| `pnpm test`                                        | 257 testes passam: schemas 85, db 38, console 67, decision 67                     |
