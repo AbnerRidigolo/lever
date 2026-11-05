@@ -209,3 +209,31 @@ Unitários com Vitest (a loja não usa banco, então não há Testcontainers). E
 - **Q2:** sim, o cookie de conta é assinado com HMAC e `STORE_SESSION_SECRET`, validada com Zod e com valor fictício no `.env.example`. (D4)
 - **Q3:** sim, "até 5 segundos" é na próxima carga da página. (seção 4)
 - **API do SDK** (plano da worktree `sdk`): `createLeverClient({ apiKey, baseUrl, logger? })`, `ready({ timeoutMs })` → `'ready' | 'timeout' | 'closed'`, `getFlag(key, user, default)` (nunca lança), `getVariant(key, user)` → `string | null`, `onExposure(listener)` → função de cancelamento, `getMetrics()` (contadores monotônicos e `configAgeMs`) e `close()`. A interface `LeverAdapter` fica como está; o `sdk-adapter.ts` da T12 converte `configAgeMs` em segundos e `null` no fallback.
+
+## 9. Execução (04/11/2026)
+
+T1 a T11 concluídas na branch `feat/store`, sem push (Q1). A T12 espera o SDK na `main`.
+
+**Verificação final:** `pnpm format:check`, `pnpm lint`, `pnpm typecheck` e `pnpm test` passam na raiz. A loja tem 95 testes Vitest em 13 arquivos, e o `pnpm turbo run test:e2e --filter=@lever/store` passa nos 16 E2E com o stub.
+
+**Cobertura:**
+
+- AC-8.1: `catalog`, `cart` e `checkout` (Vitest) e `e2e/shopping.spec.ts`.
+- AC-8.2: `banner`, `stub-adapter` e `persona` (Vitest) e `e2e/banner.spec.ts`, com sobrescrita do stub.
+- AC-8.3: `checkout`, `decorate` e `stub-adapter` (Vitest) e `e2e/checkout.spec.ts`, com sobrescrita do stub.
+- AC-8.4 e seção 13: `attributes`, `user`, `proxy` e `account` (Vitest) e `e2e/identity.spec.ts`.
+- AC-8.5: `proxy` e `decorate` (Vitest) e `e2e/no-flicker.spec.ts` (HTML bruto da primeira resposta e página sem JavaScript).
+- Seção 10 e AC-5.7 (lado da loja): `metrics` e `decorate`.
+- Ficam para a T12: os E2E `e2e/sdk/*` e o `e2e/prepare.ts`, que dependem do SDK e da avaliação do autor.
+
+**Desvios em relação ao plano:**
+
+- **`STORE_PORT` não entrou.** A porta fica fixa nos scripts (`--port 3002`), como no console, porque o script do Next não lê variável de forma portável no Windows.
+- **`LEVER_ADAPTER` aceita só `stub`.** O valor `sdk` entra na T12, junto com o adaptador. A função `leverAdapterMode()` já devolve o tipo `'stub' | 'sdk'`.
+- **Variante do checkout no painel.** O `?panel=1` saiu: o layout não recebe os parâmetros da URL. A variante aparece num selo na própria página de checkout, o único lugar em que ela é avaliada (D9 mantida).
+- **Gauge da idade da configuração com rótulo.** `lever_sdk_config_age_seconds{source="lever"}`: sem rótulo, o prom-client exporia `0` mesmo sem valor (stub). Com rótulo, a série some quando a idade é desconhecida.
+- **Layout raiz dinâmico.** O `next build` sem `STORE_SESSION_SECRET` tentava pré-renderizar o `/_not-found`, que lê cookies no cabeçalho e no painel. O layout exporta `dynamic = 'force-dynamic'` (commit `fix(store)`), o que reforça a D6.
+- **Arquivos novos não listados:** `src/server/{context,cart-cookie,session,demo-controls}.ts`, `src/lever/{keys,exposure,stub-overrides}.ts`, `src/lib/format.ts`, `src/components/checkout-fields.tsx`, `src/app/actions/demo.ts` (persona e sobrescritas juntas, no lugar de `persona.ts` e `stub-overrides.ts`), `test/{env.test,helpers}.ts` e `e2e/helpers.ts`.
+- **Vitest com JSX.** O tsconfig mantém `jsx: preserve` para o Next; o `vitest.config.ts` compila o JSX com o runtime automático do React (`oxc.jsx.runtime`).
+- **T11 em dois commits:** `test(store): ...` e `chore: wire store into env, metrics and ci` (arquivos compartilhados da D13), como a seção 5 permitia.
+- **Docker.** Estava parado e foi reiniciado uma vez, para o `pnpm test` da raiz (Testcontainers dos outros pacotes). Os testes da loja não usam Docker.
