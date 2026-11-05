@@ -13,10 +13,8 @@ Da spec 001 estão prontos:
 - **Etapa `base`:** monorepo, configurações compartilhadas, contratos Zod, banco (schema, migrations e seed) e infraestrutura local.
 - **Etapa `decision`:** o serviço de decisão em [`services/decision`](services/decision/README.md). A atribuição de variantes e a avaliação de regras são do autor e ainda lançam `not implemented`, então `/v1/evaluate` responde 500 até lá.
 - **Etapa `console`:** o console em [`apps/console`](apps/console/README.md), em <http://localhost:3000>.
-
 - **Etapa `sdk`:** o SDK para servidor em [`packages/sdk`](packages/sdk/README.md) (veja [SDK](#sdk)).
-
-A loja chega na próxima worktree (seção 11 da spec).
+- **Etapa `store`:** a loja de demonstração em [`apps/store`](apps/store/README.md), em <http://localhost:3002>. Até o SDK chegar, ela usa um stub, sem serviço de decisão.
 
 ## Pré-requisitos
 
@@ -54,6 +52,7 @@ Se alguma porta já estiver em uso na sua máquina, troque-a no `.env` (`POSTGRE
 | Mailpit    | <http://localhost:8025> | caixa de entrada local dos links mágicos        |
 | Grafana    | <http://localhost:3001> | `GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD` |
 | Tempo      | `localhost:4318` (OTLP) | traces, vistos no Grafana (datasource Tempo)    |
+| Loja       | <http://localhost:3002> | `pnpm --filter @lever/store dev`                |
 
 ### O que o seed cria
 
@@ -73,7 +72,7 @@ O seed pode ser rodado mais de uma vez sem duplicar dados.
 | `pnpm dev`                 | Sobe todos os apps e serviços em modo de desenvolvimento             |
 | `pnpm build`               | Compila todos os pacotes                                             |
 | `pnpm test`                | Vitest em todo o monorepo                                            |
-| `pnpm test:e2e`            | Playwright do console (precisa de Postgres e Mailpit no ar)          |
+| `pnpm test:e2e`            | Playwright do console (precisa de Postgres e Mailpit) e da loja      |
 | `pnpm lint`                | ESLint em todo o monorepo                                            |
 | `pnpm typecheck`           | `tsc --noEmit` em todo o monorepo                                    |
 | `pnpm format`              | Formata o código com Prettier (`format:check` só verifica)           |

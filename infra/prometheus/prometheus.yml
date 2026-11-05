@@ -13,3 +13,10 @@ scrape_configs:
     metrics_path: /metrics
     static_configs:
       - targets: ['host.docker.internal:4000']
+
+  # apps/store running on the host (pnpm --filter @lever/store dev or start): SDK metrics of
+  # spec 001 section 10 (store plan, D8).
+  - job_name: store
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['host.docker.internal:3002']

@@ -47,7 +47,7 @@ jobs:
         run: pnpm test
 
   e2e:
-    name: Console E2E
+    name: E2E
     runs-on: ubuntu-latest
     timeout-minutes: 25
     services:
@@ -101,5 +101,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: playwright-traces
-          path: apps/console/test-results/
+          path: |
+            apps/console/test-results/
+            apps/store/test-results/
           retention-days: 7

@@ -6,7 +6,12 @@
     "EMAIL_SERVER",
     "EMAIL_FROM",
     "AUTH_GITHUB_ID",
-    "AUTH_GITHUB_SECRET"
+    "AUTH_GITHUB_SECRET",
+    "STORE_SESSION_SECRET",
+    "LEVER_ADAPTER",
+    "LEVER_DECISION_URL",
+    "LEVER_API_KEY",
+    "LEVER_STUB_OVERRIDES"
   ],
   "tasks": {
     "build": {
