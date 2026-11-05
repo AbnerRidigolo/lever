@@ -162,6 +162,7 @@ describe('contract with the real decision service (FR-005, FR-006, AC-5.4 to AC-
     await eventually(() => {
       expect(client.getMetrics().connection).toBe('unauthorized');
     });
+    expect(await client.ready({ timeoutMs: 10_000 })).toBe('unauthorized');
     expect(client.getFlag('new-banner', anonymous, false)).toBe(false);
     await client.close();
   });

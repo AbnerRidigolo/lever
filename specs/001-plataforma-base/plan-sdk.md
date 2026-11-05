@@ -259,3 +259,11 @@ Desvios em relação ao plano:
 - **Contagem de `evaluationErrors`.** Conta toda falha, inclusive de `matchesSegment` na decisão de exposição. O log sai uma vez por chave.
 - **`ready()` com key rejeitada.** Com 401, 403 ou 404, `ready()` espera o próprio timeout, porque o resultado `'unauthorized'` não existe na API aprovada. O estado aparece em `getMetrics().connection`.
 - **Ambiente local.** O Docker Desktop foi reiniciado uma vez, antes do teste de contrato, como combinado.
+
+### Ajustes depois da entrega (04/11/2026)
+
+O autor deixou a decisão com o agente:
+
+- **`ready()` com key rejeitada:** resolve `'unauthorized'` na hora (401, 403 ou 404), em vez de esperar o timeout.
+- **Testes do autor:** os 6 testes de `test:author` passaram contra uma implementação descartável, mantida fora do repositório. Isso confirma que podem ser cumpridos.
+- **Logs:** o AGENTS.md agora registra a exceção do SDK à regra do pino.
