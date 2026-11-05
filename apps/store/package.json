@@ -11,8 +11,9 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
-    "test:e2e": "playwright test",
-    "catalog:generate": "tsx scripts/generate-catalog.ts"
+    "test:e2e": "playwright test && pnpm run test:e2e:sdk",
+    "catalog:generate": "tsx scripts/generate-catalog.ts",
+    "test:e2e:sdk": "tsx --env-file-if-exists=../../.env e2e/prepare.ts && playwright test -c playwright.sdk.config.ts"
   },
   "dependencies": {
     "@lever/schemas": "workspace:*",
@@ -32,13 +33,16 @@
   },
   "devDependencies": {
     "@lever/config": "workspace:*",
+    "@lever/db": "workspace:*",
     "@playwright/test": "1.64.1",
     "@tailwindcss/postcss": "4.3.3",
     "@types/node": "24.19.2",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "drizzle-orm": "0.45.4",
     "eslint": "10.12.0",
     "eslint-config-next": "16.4.2",
+    "postgres": "3.4.9",
     "tailwindcss": "4.3.3",
     "tsx": "4.23.15",
     "typescript": "6.0.3",
