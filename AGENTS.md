@@ -61,7 +61,7 @@ pnpm lint && pnpm typecheck  # obrigatório antes de abrir PR
 - **Zod em toda fronteira**: corpo de request, resposta de API, variáveis de ambiente, mensagens de stream. Os tipos vêm de `packages/schemas` via `z.infer`. Nunca duplique um tipo que já existe lá.
 - **Banco só via Drizzle** em `packages/db`. SQL cru apenas em migrations ou quando a spec pedir, sempre parametrizado.
 - **Erros**: nunca engula exceções. Serviços retornam erros no formato definido em `packages/schemas/errors.ts`.
-- **Logs** estruturados com `pino`, sem dados pessoais.
+- **Logs** estruturados com `pino`, sem dados pessoais. Exceção: `packages/sdk` é uma biblioteca e não impõe o pino; ele aceita o logger do app (interface compatível com o pino) e, sem logger, escreve uma linha JSON no console.
 - **Observabilidade**: todo serviço novo expõe `/metrics` (Prometheus) e é instrumentado com OpenTelemetry.
 - **Next.js**: Server Components por padrão; `"use client"` só quando houver interatividade. Mutações via Server Actions com validação Zod.
 - **Exports nomeados**, sem `export default` (exceto onde o Next.js exige).
