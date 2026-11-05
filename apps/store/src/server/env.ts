@@ -36,3 +36,10 @@ export function storeEnv(): StoreEnv {
   cached ??= parseEnv(storeEnvSchema, process.env);
   return cached;
 }
+
+/** Modes of `LEVER_ADAPTER`, including the one T12 adds when @lever/sdk merges. */
+export type LeverAdapterMode = 'stub' | 'sdk';
+
+export function leverAdapterMode(): LeverAdapterMode {
+  return storeEnv().LEVER_ADAPTER;
+}
