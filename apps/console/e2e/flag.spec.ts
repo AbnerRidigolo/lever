@@ -36,7 +36,10 @@ test('AC-1.1, AC-1.2, AC-1.3 (console to decision): a flag changed on screen rea
   const turnedOn = Date.now();
   await page.getByRole('button', { name: 'Salvar development' }).click();
   await expect.poll(() => bannerEnabled(request, devKey), { timeout: 5_000 }).toBe(true);
-  expect(Date.now() - turnedOn).toBeLessThan(5_000);
+  const propagationMs = Date.now() - turnedOn;
+  // NFR-003 (partial, console to decision): the measured time goes to the report (quality plan, D7).
+  test.info().annotations.push({ type: 'NFR-003', description: `${String(propagationMs)} ms` });
+  expect(propagationMs).toBeLessThan(5_000);
 
   // AC-1.3: production is untouched.
   expect(await bannerEnabled(request, prodKey)).toBe(false);
