@@ -237,3 +237,47 @@ T1 a T11 concluídas na branch `feat/store`, sem push (Q1). A T12 espera o SDK n
 - **Vitest com JSX.** O tsconfig mantém `jsx: preserve` para o Next; o `vitest.config.ts` compila o JSX com o runtime automático do React (`oxc.jsx.runtime`).
 - **T11 em dois commits:** `test(store): ...` e `chore: wire store into env, metrics and ci` (arquivos compartilhados da D13), como a seção 5 permitia.
 - **Docker.** Estava parado e foi reiniciado uma vez, para o `pnpm test` da raiz (Testcontainers dos outros pacotes). Os testes da loja não usam Docker.
+
+## 10. Execução da T12 (05/11/2026)
+
+O SDK entrou na `main` (PRs #3 a #6). A branch `feat/store` foi rebaseada sobre `origin/main` (`e58edd1`) e a T12 foi feita.
+
+**Rebase:** só o `README.md` da raiz teve conflito, no commit `chore: wire store into env, metrics and ci`. Mantive os dois lados: a linha da etapa `sdk` e a da `store` na lista de etapas, e as linhas do Tempo e da loja na tabela de serviços. O `pnpm-lock.yaml`, o `.env.example`, o `turbo.json`, o `ci.yml` e o `prometheus.yml` foram mesclados sem conflito, e o `pnpm install --frozen-lockfile` passa.
+
+**O que entrou:**
+
+- `src/lever/sdk-adapter.ts`:
+  - um cliente por processo, guardado em `globalThis`;
+  - as primeiras requisições esperam até 2 s por `ready()`, e qualquer resultado diferente de `ready` (`timeout`, `closed`, `unauthorized` ou um resultado futuro) é registrado e vira "servir os padrões";
+  - `getVariant` com `null` vira o controle, e `configAgeMs` vira segundos;
+  - as exposições do SDK vão para o mesmo log sem `userId`.
+- `LEVER_ADAPTER` aceita `sdk` (padrão) e `stub`, e `LEVER_API_KEY` é obrigatória com `sdk`. O `.env.example` continua com `stub`, para a loja subir sem key. O cookie de sobrescritas só é lido no modo `stub`.
+- **Nova métrica `lever_sdk_config_version{source="lever"}`.** Com ela, o E2E mede a propagação sem depender da avaliação do autor.
+- `e2e/prepare.ts`, `playwright.sdk.config.ts` e `e2e/sdk/*`:
+  - banco `lever_store_e2e`, separado do `lever_e2e` do console;
+  - serviço de decisão na 4102 e loja na 3102;
+  - uma key fictícia de `development`, válida só nesse banco descartável.
+- `test:e2e` roda os E2E com o stub e depois os com o SDK; `test:e2e:sdk` roda só os com o SDK.
+
+**Testes:**
+
+- `pnpm lint`, `pnpm typecheck` e `pnpm test` passam na raiz. A loja tem 107 testes Vitest em 14 arquivos, incluindo o SDK real com o serviço de decisão fora do ar servindo os padrões (AC-5.5).
+- E2E com o stub: 16 passam.
+- E2E com o SDK: 5 passam.
+  - o SDK recebe a configuração;
+  - as páginas são avaliadas pelo SDK;
+  - as sobrescritas do stub são ignoradas;
+  - o checkout renderiza um layout;
+  - uma versão publicada chega à loja em menos de 5 s, sem reinício (AC-5.4 e NFR-003).
+- E2E com o SDK pulados: 4, com `test.skip` até `LEVER_E2E_AUTHOR_READY=1`, porque `@lever/evaluation` ainda lança `not implemented`:
+  - banner ligado e desligado (AC-8.2, AC-1.1, AC-1.2);
+  - variantes estáveis (AC-8.3, AC-3.3);
+  - experimento pausado (AC-3.5);
+  - segmento `country = BR` (AC-4.3).
+
+  Rodados com a variável, falham como esperado (o SDK serve o padrão).
+
+**Desvios:**
+
+- **IDs do seed repetidos nos E2E.** O `@lever/db` exporta `seed`, mas não `SEED_IDS`, e o pacote é compartilhado. O `e2e/sdk/seed-ids.ts` repete os quatro ids necessários.
+- **O teste do experimento pausado passa hoje sem a avaliação**, porque todos já recebem o controle. Ele só prova algo depois do código do autor, por isso também fica pulado.

@@ -14,7 +14,7 @@ Da spec 001 estão prontos:
 - **Etapa `decision`:** o serviço de decisão em [`services/decision`](services/decision/README.md). A atribuição de variantes e a avaliação de regras são do autor e ainda lançam `not implemented`, então `/v1/evaluate` responde 500 até lá.
 - **Etapa `console`:** o console em [`apps/console`](apps/console/README.md), em <http://localhost:3000>.
 - **Etapa `sdk`:** o SDK para servidor em [`packages/sdk`](packages/sdk/README.md) (veja [SDK](#sdk)).
-- **Etapa `store`:** a loja de demonstração em [`apps/store`](apps/store/README.md), em <http://localhost:3002>. Até o SDK chegar, ela usa um stub, sem serviço de decisão.
+- **Etapa `store`:** a loja de demonstração em [`apps/store`](apps/store/README.md), em <http://localhost:3002>. Usa o SDK por padrão, ou um stub sem serviço de decisão (`LEVER_ADAPTER=stub`).
 
 ## Pré-requisitos
 
