@@ -15,7 +15,7 @@ const lever = createLeverClient({
   logger, // opcional: um logger do pino serve direto
 });
 
-await lever.ready(); // 'ready', 'timeout' (5 s) ou 'closed'; nunca rejeita
+await lever.ready(); // 'ready', 'timeout' (5 s), 'closed' ou 'unauthorized' (key rejeitada); nunca rejeita
 
 const user = { id: 'anon-123', attributes: { country: 'BR', device: 'mobile' } };
 const showBanner = lever.getFlag('new-banner', user, false); // valor ou padrão

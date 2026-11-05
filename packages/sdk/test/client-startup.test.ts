@@ -12,6 +12,19 @@ afterEach(async () => {
 });
 
 describe('client startup with the decision service down (AC-5.5, D2)', () => {
+  it('ready() resolves unauthorized right away when the API key is rejected', async () => {
+    fake = await FakeDecision.start({ config: testConfig(1) });
+    fake.failWith = 401;
+    const { client } = createTestClient(fake.url);
+
+    const started = Date.now();
+    expect(await client.ready({ timeoutMs: 10_000 })).toBe('unauthorized');
+    expect(Date.now() - started).toBeLessThan(5_000);
+    // A later call does not wait either, and evaluations keep serving the defaults.
+    expect(await client.ready({ timeoutMs: 10_000 })).toBe('unauthorized');
+    expect(client.getFlag('new-banner', brUser, false)).toBe(false);
+  });
+
   it('AC-5.5: serves defaults, times out ready() and picks up the config when the service comes up', async () => {
     fake = await FakeDecision.start({ config: testConfig(1) });
     await fake.stop();

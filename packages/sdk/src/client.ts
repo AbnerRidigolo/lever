@@ -25,10 +25,14 @@ import {
 } from './options.js';
 import type { SseMessage } from './sse.js';
 
-export type ReadyResult = 'ready' | 'timeout' | 'closed';
+/** `unauthorized`: the API key was rejected (401, 403 or 404), so waiting longer cannot help. */
+export type ReadyResult = 'ready' | 'timeout' | 'closed' | 'unauthorized';
 
 export interface LeverClient {
-  /** Resolves when the first valid configuration arrives, or on timeout. Never rejects (D2). */
+  /**
+   * Resolves when the first valid configuration arrives, on timeout, or as soon as the API key is
+   * rejected. Never rejects (D2).
+   */
   ready(options?: { timeoutMs?: number }): Promise<ReadyResult>;
   /** Value of a flag for the user, or the default (AC-5.1, D7). Never throws. */
   getFlag(key: string, user: UserContext, defaultValue: boolean): boolean;
@@ -98,6 +102,10 @@ class Client implements LeverClient {
       backoff: new Backoff(options.backoff, deps.random),
       logger: this.logger,
       onMessage: (message) => this.handleMessage(message),
+      onStateChange: (state) => {
+        if (state !== 'unauthorized') return;
+        for (const finish of [...this.readyWaiters]) finish('unauthorized');
+      },
     });
     this.connection.start();
   }
@@ -107,6 +115,7 @@ class Client implements LeverClient {
   }: { timeoutMs?: number } = {}): Promise<ReadyResult> {
     if (this.closed) return Promise.resolve('closed');
     if (this.cache.current !== null) return Promise.resolve('ready');
+    if (this.connection.state === 'unauthorized') return Promise.resolve('unauthorized');
     return new Promise((resolve) => {
       const finish = (result: ReadyResult): void => {
         clearTimeout(timer);
