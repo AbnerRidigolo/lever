@@ -37,13 +37,13 @@ corepack enable --install-directory "$(npm prefix -g)" pnpm
 ```bash
 cp .env.example .env     # valores fictícios para uso local
 pnpm install             # dependências
-docker compose up -d     # Postgres, Prometheus e Grafana
+docker compose up -d     # Postgres, Prometheus, Grafana, Tempo e Mailpit
 pnpm db:migrate          # aplica as migrations
 pnpm db:seed             # dados de exemplo
 pnpm test                # testes (usam Testcontainers: o Docker precisa estar rodando)
 ```
 
-Se alguma porta já estiver em uso na sua máquina, troque-a no `.env` (`POSTGRES_PORT`, `PROMETHEUS_PORT`, `GRAFANA_PORT`). Se trocar a do Postgres, ajuste também o `DATABASE_URL`.
+Se alguma porta já estiver em uso na sua máquina, troque-a no `.env` (`POSTGRES_PORT`, `PROMETHEUS_PORT`, `GRAFANA_PORT`, `TEMPO_PORT`, `OTLP_HTTP_PORT`). Se trocar a do Postgres, ajuste também o `DATABASE_URL`.
 
 | Serviço    | Endereço                | Acesso                                          |
 | ---------- | ----------------------- | ----------------------------------------------- |
@@ -51,6 +51,7 @@ Se alguma porta já estiver em uso na sua máquina, troque-a no `.env` (`POSTGRE
 | Prometheus | <http://localhost:9090> | —                                               |
 | Mailpit    | <http://localhost:8025> | caixa de entrada local dos links mágicos        |
 | Grafana    | <http://localhost:3001> | `GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD` |
+| Tempo      | `localhost:4318` (OTLP) | traces, vistos no Grafana (datasource Tempo)    |
 
 ### O que o seed cria
 

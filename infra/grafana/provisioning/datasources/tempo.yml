@@ -1,0 +1,10 @@
+apiVersion: 1
+
+# Traces stored by the tempo service of infra/docker-compose.yml (quality plan, D9).
+datasources:
+  - name: Tempo
+    uid: tempo
+    type: tempo
+    access: proxy
+    url: http://tempo:3200
+    editable: false
