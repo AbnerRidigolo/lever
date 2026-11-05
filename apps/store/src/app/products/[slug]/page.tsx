@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 
 import { findProductBySlug } from '@/catalog/catalog';
 import { CATEGORY_LABELS } from '@/catalog/schema';
+import { AddToCartButton } from '@/components/add-to-cart-button';
 import { ProductIllustration } from '@/components/product-illustration';
 import { PageTitle } from '@/components/ui';
 import { formatPrice } from '@/lib/format';
@@ -22,6 +23,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         <p className="text-2xl font-semibold" data-testid="product-price">
           {formatPrice(product.priceCents)}
         </p>
+        <AddToCartButton productId={product.id} />
       </div>
     </article>
   );
