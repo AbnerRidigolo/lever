@@ -290,6 +290,9 @@ importers:
       '@lever/schemas':
         specifier: workspace:*
         version: link:../../packages/schemas
+      '@lever/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
       '@opentelemetry/exporter-trace-otlp-http':
         specifier: 0.223.0
         version: 0.223.0(@opentelemetry/api@1.9.1)

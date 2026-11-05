@@ -1,15 +1,19 @@
 import { collectDefaultMetrics, Counter, Gauge, Registry } from 'prom-client';
 
-import type { EvaluationObserver } from '@/lever/adapter';
+import type { EvaluationObserver, LeverAdapter } from '@/lever/adapter';
 
 // SDK metrics exposed by the store (spec 001 section 10, store plan D8). "Evaluations per
 // second" is `rate(lever_sdk_evaluations_total[1m])` in Prometheus.
 
+export type ConfigSource = Pick<LeverAdapter, 'configAgeSeconds' | 'configVersion'>;
+
+const NO_CONFIG: ConfigSource = { configAgeSeconds: () => null, configVersion: () => null };
+
 export interface StoreMetrics {
   registry: Registry;
   observer: EvaluationObserver;
-  /** Where the configuration age comes from: the adapter in use. */
-  setConfigAgeSource(source: () => number | null): void;
+  /** Where the configuration age and version come from: the adapter in use. */
+  setConfigSource(source: ConfigSource): void;
 }
 
 export function createStoreMetrics(
@@ -31,7 +35,7 @@ export function createStoreMetrics(
     registers: [registry],
   });
 
-  let configAge: () => number | null = () => null;
+  let config: ConfigSource = NO_CONFIG;
   new Gauge({
     name: 'lever_sdk_config_age_seconds',
     help: 'Seconds since the SDK received its last valid configuration (no sample when unknown)',
@@ -39,9 +43,20 @@ export function createStoreMetrics(
     labelNames: ['source'] as const,
     registers: [registry],
     collect() {
-      const age = configAge();
+      const age = config.configAgeSeconds();
       this.reset();
       if (age !== null) this.set({ source: 'lever' }, age);
+    },
+  });
+  new Gauge({
+    name: 'lever_sdk_config_version',
+    help: 'Version of the configuration the SDK is using (no sample when unknown)',
+    labelNames: ['source'] as const,
+    registers: [registry],
+    collect() {
+      const version = config.configVersion();
+      this.reset();
+      if (version !== null) this.set({ source: 'lever' }, version);
     },
   });
 
@@ -55,8 +70,8 @@ export function createStoreMetrics(
         errors.inc({ kind });
       },
     },
-    setConfigAgeSource(source) {
-      configAge = source;
+    setConfigSource(source) {
+      config = source;
     },
   };
 }

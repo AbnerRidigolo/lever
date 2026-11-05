@@ -16,17 +16,31 @@ const stubOverridesJson = z.string().transform((value, ctx) => {
   }
 });
 
-export const storeEnvSchema = z.object({
-  LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
-  // Only the stub exists until @lever/sdk merges; T12 adds 'sdk' (store plan, D1).
-  LEVER_ADAPTER: z.enum(['stub']).default('stub'),
-  LEVER_DECISION_URL: z.url().default('http://localhost:4000'),
-  LEVER_API_KEY: optional(z.string().min(1)),
-  // Values forced for everyone by the stub adapter, e.g. {"flags":{"new-banner":true}}.
-  LEVER_STUB_OVERRIDES: optional(stubOverridesJson),
-  // Signs the fictitious account cookie (store plan, D4 and Q2).
-  STORE_SESSION_SECRET: z.string().min(16),
-});
+export const LEVER_ADAPTER_MODES = ['sdk', 'stub'] as const;
+
+export const storeEnvSchema = z
+  .object({
+    LOG_LEVEL: z
+      .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
+      .default('info'),
+    // 'sdk' uses @lever/sdk against the decision service; 'stub' needs nothing (store plan, D1).
+    LEVER_ADAPTER: z.enum(LEVER_ADAPTER_MODES).default('sdk'),
+    LEVER_DECISION_URL: z.url().default('http://localhost:4000'),
+    LEVER_API_KEY: optional(z.string().min(1)),
+    // Values forced for everyone by the stub adapter, e.g. {"flags":{"new-banner":true}}.
+    LEVER_STUB_OVERRIDES: optional(stubOverridesJson),
+    // Signs the fictitious account cookie (store plan, D4 and Q2).
+    STORE_SESSION_SECRET: z.string().min(16),
+  })
+  .superRefine((env, ctx) => {
+    if (env.LEVER_ADAPTER === 'sdk' && env.LEVER_API_KEY === undefined) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'is required when LEVER_ADAPTER=sdk (or set LEVER_ADAPTER=stub)',
+        path: ['LEVER_API_KEY'],
+      });
+    }
+  });
 export type StoreEnv = z.infer<typeof storeEnvSchema>;
 
 let cached: StoreEnv | undefined;
@@ -37,8 +51,7 @@ export function storeEnv(): StoreEnv {
   return cached;
 }
 
-/** Modes of `LEVER_ADAPTER`, including the one T12 adds when @lever/sdk merges. */
-export type LeverAdapterMode = 'stub' | 'sdk';
+export type LeverAdapterMode = (typeof LEVER_ADAPTER_MODES)[number];
 
 export function leverAdapterMode(): LeverAdapterMode {
   return storeEnv().LEVER_ADAPTER;

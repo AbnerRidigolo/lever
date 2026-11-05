@@ -11,6 +11,8 @@ export interface LeverAdapter {
   getVariant(key: string, user: UserContext, fallbackVariant: string): Promise<string>;
   /** Seconds since the last valid configuration; null when there is none (stub). */
   configAgeSeconds(): number | null;
+  /** Version of the configuration in use; null when there is none (stub). */
+  configVersion(): number | null;
 }
 
 export type EvaluationKind = 'flag' | 'variant';

@@ -52,5 +52,13 @@ export function withSafety(
         return null;
       }
     },
+
+    configVersion() {
+      try {
+        return adapter.configVersion();
+      } catch {
+        return null;
+      }
+    },
   };
 }

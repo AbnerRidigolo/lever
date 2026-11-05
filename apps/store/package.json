@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@lever/schemas": "workspace:*",
+    "@lever/sdk": "workspace:*",
     "@opentelemetry/exporter-trace-otlp-http": "0.223.0",
     "@opentelemetry/instrumentation-http": "0.223.0",
     "@opentelemetry/sdk-node": "0.223.0",

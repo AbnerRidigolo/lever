@@ -98,12 +98,14 @@ describe('stub overrides', () => {
   it('reads LEVER_STUB_OVERRIDES from the environment as validated JSON', () => {
     const env = parseEnv(storeEnvSchema, {
       STORE_SESSION_SECRET: 'test-only-session-secret',
+      LEVER_ADAPTER: 'stub',
       LEVER_STUB_OVERRIDES: '{"flags":{"new-banner":true}}',
     });
     expect(env.LEVER_STUB_OVERRIDES).toEqual({ flags: { 'new-banner': true }, experiments: {} });
     expect(() =>
       parseEnv(storeEnvSchema, {
         STORE_SESSION_SECRET: 'test-only-session-secret',
+        LEVER_ADAPTER: 'stub',
         LEVER_STUB_OVERRIDES: '{not json',
       }),
     ).toThrow();

@@ -17,26 +17,44 @@ import {
   resolveCheckoutLayout,
   type CheckoutLayout,
 } from './keys';
+import { createSdkAdapter, sdkRuntime } from './sdk-adapter';
 import { createStubAdapter } from './stub-adapter';
 import { mergeOverrides, stubOverridesSchema } from './stub-overrides';
 
-/** Lever for the current request (store plan, D1). Today always the stub; T12 adds the SDK. */
-export const getLever = cache(async (): Promise<LeverAdapter> => {
+/** Adapter of the configured mode, without the safety wrapper (store plan, D1). */
+async function createAdapter(): Promise<LeverAdapter> {
   const env = storeEnv();
+  if (env.LEVER_ADAPTER === 'sdk') {
+    if (env.LEVER_API_KEY === undefined) throw new Error('LEVER_API_KEY is required in sdk mode');
+    const runtime = sdkRuntime({
+      apiKey: env.LEVER_API_KEY,
+      baseUrl: env.LEVER_DECISION_URL,
+      logger,
+    });
+    // Only the first requests wait (up to SDK_READY_TIMEOUT_MS); then this resolves at once.
+    await runtime.ready;
+    return createSdkAdapter(runtime.client);
+  }
+
+  // Stub: the per-browser cookie is read only in this mode.
   const cookieStore = await cookies();
   const overrides = mergeOverrides(
     env.LEVER_STUB_OVERRIDES,
     parseJsonCookie(stubOverridesSchema, cookieStore.get(COOKIES.stubOverrides)?.value),
   );
-  const adapter = createStubAdapter({
+  return createStubAdapter({
     overrides,
     onExposure: (event) => {
       logExposure(logger, event);
     },
   });
+}
+
+/** Lever for the current request: the configured adapter, wrapped by `withSafety`. */
+export const getLever = cache(async (): Promise<LeverAdapter> => {
   const metrics = storeMetrics();
-  const lever = withSafety(adapter, { logger, observer: metrics.observer });
-  metrics.setConfigAgeSource(() => lever.configAgeSeconds());
+  const lever = withSafety(await createAdapter(), { logger, observer: metrics.observer });
+  metrics.setConfigSource(lever);
   return lever;
 });
 

@@ -26,6 +26,9 @@ function fakeAdapter(answers: { flag?: () => FlagValue; variant?: () => string }
     configAgeSeconds: () => {
       throw new Error('boom');
     },
+    configVersion: () => {
+      throw new Error('boom');
+    },
   };
 }
 
@@ -87,10 +90,11 @@ describe('withSafety: Lever never breaks a page (store plan, section 4)', () => 
     ]);
   });
 
-  it('a failing configuration age reads as unknown', () => {
+  it('a failing configuration age or version reads as unknown', () => {
     const { logger } = captureLogger();
     const lever = withSafety(fakeAdapter({}), { logger, observer: recordingObserver().observer });
     expect(lever.configAgeSeconds()).toBeNull();
+    expect(lever.configVersion()).toBeNull();
   });
 });
 

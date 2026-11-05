@@ -40,5 +40,6 @@ export function createStubAdapter(options: {
     },
 
     configAgeSeconds: () => null,
+    configVersion: () => null,
   };
 }

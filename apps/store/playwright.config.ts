@@ -5,6 +5,8 @@ import { STORE_URL } from './e2e/env';
 // E2E with the stub adapter: no decision service and no database (store plan, section 6).
 export default defineConfig({
   testDir: './e2e',
+  // The flows with the real SDK have their own config (playwright.sdk.config.ts).
+  testIgnore: ['sdk/**'],
   fullyParallel: false,
   workers: 1,
   timeout: 60_000,
