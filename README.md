@@ -14,7 +14,9 @@ Da spec 001 estão prontos:
 - **Etapa `decision`:** o serviço de decisão em [`services/decision`](services/decision/README.md). A atribuição de variantes e a avaliação de regras são do autor e ainda lançam `not implemented`, então `/v1/evaluate` responde 500 até lá.
 - **Etapa `console`:** o console em [`apps/console`](apps/console/README.md), em <http://localhost:3000>.
 
-O SDK e a loja chegam nas próximas worktrees (seção 11 da spec).
+- **Etapa `sdk`:** o SDK para servidor em [`packages/sdk`](packages/sdk/README.md) (veja [SDK](#sdk)).
+
+A loja chega na próxima worktree (seção 11 da spec).
 
 ## Pré-requisitos
 
@@ -79,6 +81,23 @@ O seed pode ser rodado mais de uma vez sem duplicar dados.
 | `pnpm --filter <pacote> …` | Roda um script em um pacote só (ex.: `pnpm --filter @lever/db test`) |
 
 Para criar uma migration depois de alterar `packages/db/src/schema`, rode `pnpm --filter @lever/db db:generate`. Só uma worktree por vez pode criar migrations (AGENTS.md).
+
+## SDK
+
+O app cliente avalia flags e variantes localmente com `@lever/sdk`, sem chamada de rede por avaliação:
+
+```ts
+import { createLeverClient } from '@lever/sdk';
+
+const lever = createLeverClient({ apiKey: 'lvr_dev_...', baseUrl: 'http://localhost:4000' });
+await lever.ready();
+
+const user = { id: 'anon-123', attributes: { country: 'BR', device: 'mobile' } };
+lever.getFlag('new-banner', user, false);
+lever.getVariant('checkout-layout', user);
+```
+
+Detalhes, comportamento com o serviço fora do ar e métricas em [`packages/sdk/README.md`](packages/sdk/README.md).
 
 ## Estrutura
 

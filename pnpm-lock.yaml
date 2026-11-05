@@ -394,6 +394,49 @@ importers:
         specifier: 5.0.5
         version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(@vitest/coverage-v8@5.0.5)(vite@8.3.4(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
 
+  packages/sdk:
+    dependencies:
+      '@lever/evaluation':
+        specifier: workspace:*
+        version: link:../evaluation
+      '@lever/schemas':
+        specifier: workspace:*
+        version: link:../schemas
+      zod:
+        specifier: 4.6.7
+        version: 4.6.7
+    devDependencies:
+      '@lever/config':
+        specifier: workspace:*
+        version: link:../config
+      '@lever/db':
+        specifier: workspace:*
+        version: link:../db
+      '@lever/decision':
+        specifier: workspace:*
+        version: link:../../services/decision
+      '@testcontainers/postgresql':
+        specifier: 12.2.1
+        version: 12.2.1
+      '@types/node':
+        specifier: 24.19.2
+        version: 24.19.2
+      '@vitest/coverage-v8':
+        specifier: 5.0.5
+        version: 5.0.5(vitest@5.0.5)
+      drizzle-orm:
+        specifier: 0.45.4
+        version: 0.45.4(@opentelemetry/api@1.9.1)(postgres@3.4.9)
+      eslint:
+        specifier: 10.12.0
+        version: 10.12.0(jiti@2.7.0)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: 5.0.5
+        version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(@vitest/coverage-v8@5.0.5)(vite@8.3.4(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
+
   services/decision:
     dependencies:
       '@fastify/otel':
