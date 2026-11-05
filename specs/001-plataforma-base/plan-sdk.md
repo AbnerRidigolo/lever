@@ -5,7 +5,7 @@
 | Spec     | `specs/001-plataforma-base/spec.md`                                       |
 | Etapa    | `sdk` (seção 11, ordem 1)                                                 |
 | Worktree | `../lever-sdk`, branch `feat/sdk`                                         |
-| Status   | Aprovado pelo autor em 03/11/2026 (D1 a D16 aceitas)                     |
+| Status   | Aprovado pelo autor em 03/11/2026 (D1 a D16 aceitas)                      |
 | Escopo   | `packages/sdk`. Nenhum arquivo compartilhado muda sem aprovação (ver D16) |
 
 ## 1. O que esta etapa entrega
@@ -237,3 +237,25 @@ Vitest. A maior parte usa o servidor falso da D12 (rede real, sem Docker) e rel�
 - **Métricas da seção 10 em `/metrics`:** o SDK as expõe por `getMetrics()`; quem publica no Prometheus é a loja.
 - **Publicação no npm:** depende da D1.
 - **SDK para navegador:** fora da fase 1 (seção 13).
+
+## 8. Execução (03 e 04/11/2026)
+
+Etapa concluída. Resultados:
+
+- `pnpm lint`, `pnpm typecheck` e `pnpm test` na raiz passam. No `@lever/sdk`: 16 arquivos e 97 testes, contando os 4 do contrato com o serviço real.
+- **Cobertura (NFR-005):** 98,07% de statements, 94,76% de branches, 100% de funções e 99,07% de linhas.
+- **NFR-001 com o avaliador falso:** no `pnpm --filter @lever/sdk bench`, o p99 é de 0,003 ms em `getFlag` e 0,008 ms em `getVariant` com exposição. No `latency.test.ts`, com 10.000 chamadas, fica em cerca de 0,007 ms e 0,008 ms. O número com a avaliação real sai do `test:author` quando o autor implementar.
+- **Contrato com o serviço real:** a mudança publicada no banco chegou ao SDK bem abaixo de 5 s.
+- **`test:author`:** 5 dos 6 testes falham porque o SDK serve os padrões enquanto `@lever/evaluation` lança `not implemented`, como esperado. O de latência passa, mas só mede o caminho de erro.
+
+Desvios em relação ao plano:
+
+- **`zod` como dependência direta.** `options.ts` usa `z`, e o pnpm não deixa importar dependência transitiva. Mesma versão (4.6.7).
+- **Benchmark no Vitest 5.** `bench` deixou de ser exportado de `vitest` e virou um recurso do contexto do teste (`async ({ bench }) => …`), que só roda com `vitest bench`. O `bench/evaluate.bench.ts` usa `bench.compare` e falha se o p99 passar de 1 ms. O script é `vitest bench --run --reporter=verbose`.
+- **Arquivos de teste.** Os testes do laço de conexão ficaram em `connection.test.ts` e `startup.test.ts`; os do cliente, em `stream.test.ts`, `client-startup.test.ts` e `resilience.test.ts`. Também entraram `connection-helpers.ts`, `client-helpers.ts` (o `fakeEvaluator` e a fábrica de testes) e `fixtures.ts`.
+- **Sem `global-setup.ts`.** O Postgres do Testcontainers sobe no `beforeAll` do próprio arquivo de contrato, para que os outros testes não precisem de Docker.
+- **`ExposureHub` e `ClientCounters`.** São as classes de `exposure.ts` e `metrics.ts`. `parseStreamMessage` ficou em `config-cache.ts`.
+- **Interface `Evaluator` com propriedades `readonly` de função**, e não métodos, para passar na regra `unbound-method` do ESLint.
+- **Contagem de `evaluationErrors`.** Conta toda falha, inclusive de `matchesSegment` na decisão de exposição. O log sai uma vez por chave.
+- **`ready()` com key rejeitada.** Com 401, 403 ou 404, `ready()` espera o próprio timeout, porque o resultado `'unauthorized'` não existe na API aprovada. O estado aparece em `getMetrics().connection`.
+- **Ambiente local.** O Docker Desktop foi reiniciado uma vez, antes do teste de contrato, como combinado.
