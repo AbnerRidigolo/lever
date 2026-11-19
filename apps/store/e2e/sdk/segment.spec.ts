@@ -1,10 +1,8 @@
 import { expect, test } from '@playwright/test';
 
 import { createSegment, setNewBanner } from './db';
-import { AUTHOR_PENDING_REASON, AUTHOR_READY } from './env';
 
 // Needs matchesSegment and evaluateFlag from @lever/evaluation.
-test.skip(!AUTHOR_READY, AUTHOR_PENDING_REASON);
 
 test.afterEach(async () => {
   await setNewBanner(false);

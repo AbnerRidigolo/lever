@@ -1,10 +1,8 @@
 import { expect, test } from '@playwright/test';
 
 import { setNewBanner } from './db';
-import { AUTHOR_PENDING_REASON, AUTHOR_READY } from './env';
 
 // Needs evaluateFlag from @lever/evaluation: until then the SDK serves the default (false).
-test.skip(!AUTHOR_READY, AUTHOR_PENDING_REASON);
 
 test.afterEach(async () => {
   await setNewBanner(false);

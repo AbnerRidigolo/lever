@@ -4,10 +4,8 @@ import { STORE_URL } from '../env';
 import { fillCart } from '../helpers';
 
 import { setCheckoutStatus } from './db';
-import { AUTHOR_PENDING_REASON, AUTHOR_READY } from './env';
 
 // Needs evaluateExperiment from @lever/evaluation: until then every user gets the control.
-test.skip(!AUTHOR_READY, AUTHOR_PENDING_REASON);
 
 const USERS = Array.from(
   { length: 20 },
