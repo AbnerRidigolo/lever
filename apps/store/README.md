@@ -20,7 +20,7 @@ Variáveis (no `.env` da raiz, com valores fictícios no `.env.example`):
 
 - **Identidade:** o `src/proxy.ts` cria o cookie `lever_uid` na primeira visita e o repassa à própria requisição. `country` vem do `Accept-Language` e `device` do `User-Agent`. Com uma conta fictícia (`/account`), o id da conta substitui o id anônimo; ao sair, o id anônimo volta.
 - **Lever:** as páginas usam `getLever()` (`src/lever/`), que devolve o adaptador envolvido por `withSafety`. Erros viram o valor padrão ou o controle, são contados e registrados sem dados do usuário.
-- **SDK:** um cliente por processo (`src/lever/sdk-adapter.ts`). As primeiras requisições esperam a configuração por até 2 s; qualquer resultado de `ready()` diferente de `ready` é registrado e a loja serve os padrões enquanto o SDK reconecta. Enquanto a avaliação do autor (`@lever/evaluation`) lançar `not implemented`, o SDK serve o padrão da flag e o controle do experimento.
+- **SDK:** um cliente por processo (`src/lever/sdk-adapter.ts`). As primeiras requisições esperam a configuração por até 2 s; qualquer resultado de `ready()` diferente de `ready` é registrado e a loja serve os padrões enquanto o SDK reconecta. Com a configuração carregada, o SDK avalia flags, segmentos e variantes pelo motor compartilhado.
 - **Stub:** sem rede e sem hash. Serve o padrão da flag e o controle do experimento, salvo sobrescritas da variável `LEVER_STUB_OVERRIDES` ou do Painel do Lever (cookie deste navegador).
 - **Sem piscar:** toda página é dinâmica e avaliada no servidor. Só a versão certa do banner e do checkout chega ao HTML.
 - **Painel do Lever** (rodapé): id em uso, `country`, `device`, valor de `new-banner`, persona de demonstração e sobrescritas do stub. A variante do checkout aparece só na página de checkout, para não gerar exposição de quem não chegou lá.
@@ -38,4 +38,4 @@ pnpm --filter @lever/store test:e2e:sdk # só os fluxos com o SDK real
 
 - **Com o stub** (`e2e/*.spec.ts`): loja na porta 3102, sem serviço de decisão nem banco.
 - **Com o SDK** (`e2e/sdk/*.spec.ts`, `playwright.sdk.config.ts`): o `e2e/prepare.ts` recria o banco `lever_store_e2e` (migrations, seed e uma key fictícia de `development`); o serviço de decisão sobe na 4102 e a loja na 3102, em modo `sdk`.
-- Os fluxos que dependem da avaliação do autor (banner por flag, variantes estáveis, experimento pausado e segmento) ficam pulados até `LEVER_E2E_AUTHOR_READY=1`.
+- Os fluxos de banner por flag, variantes estáveis, experimento pausado e segmento rodam sempre na suíte SDK real.

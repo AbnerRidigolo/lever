@@ -1,14 +1,11 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createClient, defaultDeps, type LeverClient } from '../src/client.js';
-import { fakeEvaluator } from '../test/client-helpers.js';
 import { FakeDecision } from '../test/fake-decision.js';
 import { testConfig } from '../test/fixtures.js';
 import { capturingLogger, TEST_API_KEY } from '../test/helpers.js';
 
-// NFR-001 (sdk plan, D14): `pnpm --filter @lever/sdk bench` reports the latency of local
-// evaluation. It uses the fake evaluator until the author implements @lever/evaluation, so it
-// measures the cost of the SDK around the evaluation.
+// NFR-001: measures the real evaluation, including SDK overhead.
 let fake: FakeDecision;
 let client: LeverClient;
 
@@ -16,7 +13,7 @@ beforeAll(async () => {
   fake = await FakeDecision.start({ config: testConfig(1) });
   client = createClient(
     { apiKey: TEST_API_KEY, baseUrl: fake.url, logger: capturingLogger() },
-    { ...defaultDeps, evaluator: fakeEvaluator },
+    defaultDeps,
   );
   await client.ready();
   client.onExposure(() => undefined);

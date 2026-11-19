@@ -1,15 +1,16 @@
 # packages/evaluation
 
-Avaliação de flags e experimentos (`@lever/evaluation`): hash e bucketing (`src/assignment.ts`) e regras de segmento e rollout (`src/evaluation.ts`). O serviço de decisão e o SDK usam este mesmo código, então os dois dão sempre o mesmo resultado para a mesma configuração e o mesmo usuário (AC-5.8).
+Motor compartilhado pelo SDK e pelo serviço de decisão. Implementa flags, rollout percentual, segmentação e atribuição determinística de variantes.
 
-**Reservado ao autor** (AGENTS.md). Por enquanto só existem as assinaturas, que lançam `not implemented`.
+- SHA-256 da tupla JSON UTF-8 `[resourceKey, salt, userId]`; primeiros 32 bits big-endian, módulo 10.000.
+- Rollout: o usuário participa quando seu bucket é menor que `rolloutBps`.
+- Variantes: intervalos cumulativos na ordem da configuração; pesos zero não recebem usuários.
+- Segmentos: condições combinadas por E, sem coerção de tipos. Atributos ausentes ou herdados não correspondem. Comparações negativas exigem tipos compatíveis.
+- `contains`: substring em texto ou elemento exato de uma lista de textos.
+- Flags desativadas ou fora do público retornam o padrão configurado. Experimentos fora de `running` ou do público retornam o controle.
 
-## Testes
+## Validação
 
-```bash
-pnpm --filter @lever/evaluation test:author
-```
+`pnpm --filter @lever/evaluation test` inclui os testes de distribuição com 100.000 usuários. `test:author` continua disponível como atalho para a suíte original. O SDK usa o mesmo motor em sua suíte padrão; os E2E reais da loja não são mais opcionais.
 
-São 43 testes escritos a partir da spec: FR-004, AC-2.1 a 2.3, AC-3.2 a 3.5 e AC-4.1 a 4.4. Ficam fora do `pnpm test` até a implementação existir. Quando todos passarem, mova `test/author/` para a suíte principal (`vitest.config.ts`).
-
-A interpretação do operador `contains` nos testes é: substring de um atributo texto, ou elemento de um atributo lista. Confirme ou ajuste.
+A implementação antes reservada ao autor foi autorizada expressamente em 19/11/2026. Consulte o ADR-002 para o contrato de estabilidade.

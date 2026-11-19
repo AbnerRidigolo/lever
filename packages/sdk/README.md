@@ -2,7 +2,7 @@
 
 SDK TypeScript do Lever (`@lever/sdk`), só para servidor nesta fase: avalia flags e variantes localmente, com cache, stream e fallback. Fase 1, worktree `sdk` da spec [001](../../specs/001-plataforma-base/spec.md); decisões no [plano da etapa](../../specs/001-plataforma-base/plan-sdk.md).
 
-A avaliação vem de [`@lever/evaluation`](../evaluation/README.md), o mesmo código do serviço de decisão (AC-5.8). Enquanto o autor não a implementa, ela lança `not implemented`; o SDK registra o erro e devolve os valores padrão.
+A avaliação vem de [`@lever/evaluation`](../evaluation/README.md), o mesmo código do serviço de decisão (AC-5.8). O motor implementa atribuição determinística, rollout e segmentação. Em caso de erro, o SDK registra a falha e devolve os valores padrão.
 
 ## Uso
 
@@ -59,6 +59,6 @@ pnpm --filter @lever/sdk test:author  # com a avaliação real do autor
 
 - A maior parte dos testes usa um servidor de decisão falso, com rede real, para simular falhas, e um avaliador falso injetado pela fábrica interna `createClient` (não exportada).
 - `test/decision.contract.test.ts` sobe o serviço de decisão real (`services/decision/dist/main.js`) num processo filho, com Postgres do Testcontainers. Precisa de Docker.
-- `test/author/` fica fora do `pnpm test` até `@lever/evaluation` ser implementado.
+- `test/author/` faz parte do `pnpm test`, usando o avaliador real. O teste de contrato compara o SDK à API HTTP para 10.000 usuários.
 
 O pacote é `private` nesta fase; a publicação no npm fica para depois (D1 do plano).
