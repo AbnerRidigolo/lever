@@ -6,7 +6,7 @@
 | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Spec   | `specs/002-eventos-e-lakehouse/spec.md` (aprovada pelo autor em 27/11/2026)                                                                                   |
 | Etapa  | `base-002` (seção 12, ordem 0)                                                                                                                                |
-| Status | Rascunho (27/11/2026), aguardando aprovação do autor, principalmente das decisões D1 a D6                                                                     |
+| Status | Aprovado pelo autor em 27/11/2026 (D1 a D6 aceitas; execução por subagentes)                                                                                  |
 | Escopo | `packages/schemas`, `packages/db` (tabelas, migration 0004, seed), armazenamento S3, catálogo Iceberg e Trino no compose, `.env.example`, CI, README, ADR-006 |
 
 **Objetivo:** deixar prontos os contratos, as tabelas e a infraestrutura local de que as worktrees de ordem 1 da spec 002 dependem.
