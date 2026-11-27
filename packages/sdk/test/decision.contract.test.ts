@@ -1,3 +1,5 @@
+import { evaluateResponseSchema } from '@lever/schemas';
+import { createLeverClient } from '../src/index.js';
 import {
   apiKeys,
   configVersions,
@@ -167,3 +169,38 @@ describe('contract with the real decision service (FR-005, FR-006, AC-5.4 to AC-
     await client.close();
   });
 });
+
+it('AC-5.8 / FR-007: the real SDK and HTTP API agree for 10,000 synthetic users', async () => {
+  const client = createLeverClient({ apiKey, baseUrl: decision.url });
+  try {
+    expect(await client.ready()).toBe('ready');
+    const variants = new Set<string>();
+    for (let start = 0; start < 10_000; start += 20) {
+      await Promise.all(
+        Array.from({ length: 20 }, async (_, offset) => {
+          const user = {
+            id: `parity-${start + offset}`,
+            attributes: { country: offset % 2 === 0 ? 'BR' : 'US', device: 'mobile' },
+          };
+          const response = await fetch(`${decision.url}/v1/evaluate`, {
+            method: 'POST',
+            headers: { authorization: `Bearer ${apiKey}`, 'content-type': 'application/json' },
+            body: JSON.stringify({ user }),
+          });
+          expect(response.status).toBe(200);
+          const body = evaluateResponseSchema.parse(await response.json());
+          expect(body.flags['new-banner']).toBe(client.getFlag('new-banner', user, false));
+          expect(body.experiments['checkout-layout']).toBe(
+            client.getVariant('checkout-layout', user),
+          );
+          expect(body.version).toBe(client.getMetrics().configVersion);
+          variants.add(body.experiments['checkout-layout'] ?? '');
+        }),
+      );
+    }
+    expect(variants).toEqual(new Set(['one-page', 'multi-step']));
+    expect(client.getMetrics().evaluationErrors).toBe(0);
+  } finally {
+    await client.close();
+  }
+}, 120_000);

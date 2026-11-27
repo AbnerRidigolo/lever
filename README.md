@@ -11,8 +11,10 @@ Plataforma de experimentação com um sistema de recomendação acoplado: featur
 Da spec 001 estão prontos:
 
 - **Etapa `base`:** monorepo, configurações compartilhadas, contratos Zod, banco (schema, migrations e seed) e infraestrutura local.
-- **Etapa `decision`:** o serviço de decisão em [`services/decision`](services/decision/README.md). A atribuição de variantes e a avaliação de regras são do autor e ainda lançam `not implemented`, então `/v1/evaluate` responde 500 até lá.
+- **Etapa `decision`:** o serviço de decisão em [`services/decision`](services/decision/README.md). A avaliação remota usa o motor compartilhado `@lever/evaluation`, com hash SHA-256, rollout e segmentação implementados.
 - **Etapa `console`:** o console em [`apps/console`](apps/console/README.md), em <http://localhost:3000>.
+- **Motor de avaliação:** atribuição determinística, rollout e segmentação implementados; testes do motor e do SDK real incluídos na suíte padrão.
+
 - **Etapa `sdk`:** o SDK para servidor em [`packages/sdk`](packages/sdk/README.md) (veja [SDK](#sdk)).
 - **Etapa `store`:** a loja de demonstração em [`apps/store`](apps/store/README.md), em <http://localhost:3002>. Usa o SDK por padrão, ou um stub sem serviço de decisão (`LEVER_ADAPTER=stub`).
 
@@ -140,3 +142,17 @@ Seção 12 da [spec 001](specs/001-plataforma-base/spec.md): as NFR-001 a NFR-00
 ## CI
 
 O GitHub Actions roda `install`, `format:check`, `lint`, `typecheck` e `test` em todo push e pull request (`.github/workflows/ci.yml`).
+
+## Validação da implementação do motor — 19/11/2026
+
+Na branch de implementação da plataforma base:
+
+- 522 testes unitários e de integração aprovados, executados com `pnpm -r --workspace-concurrency=1 --if-present run test --maxWorkers=1` para reduzir disputa de recursos no Windows.
+- 34 testes Playwright aprovados: 9 do console, 16 da loja em modo stub e 9 da loja com SDK real. Os testes reais de banner, segmento e checkout não são mais pulados.
+- Paridade local/remota para 10.000 usuários sintéticos aprovada pelo teste de contrato do SDK.
+- `lint`, `typecheck` e build de todos os pacotes aprovados.
+- NFR-001, benchmark do avaliador real: p99 de `getFlag` 0,01100 ms; p99 de `getVariant` com exposição 0,01360 ms. Medição local, sem equivalência a produção.
+- NFR-005: SDK com 99,08% de linhas, 98,10% de instruções, 100% de funções e 95,45% de ramos; decisão com 98,56%, 96,98%, 94,73% e 91,93%, respectivamente.
+- NFR-002 ainda precisa de uma nova medição k6 com o motor real. Os números anteriores na tabela são históricos.
+
+Cobertura funcional desta entrega: FR-004 e FR-007; AC-2.1 a AC-2.3, AC-3.2 a AC-3.5, AC-4.1 a AC-4.4, AC-5.1 a AC-5.8 e integração com AC-8.2 a AC-8.5. Os demais fluxos existentes foram verificados pelas suítes completas. Coleta, estatística, recomendação, agentes e infraestrutura de produção são as próximas fases.

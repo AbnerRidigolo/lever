@@ -2,33 +2,74 @@ import type {
   ExperimentConfig,
   FlagConfig,
   FlagValue,
+  SegmentCondition,
   SegmentConfig,
   UserContext,
 } from '@lever/schemas';
 
-// RESERVED FOR THE AUTHOR (AGENTS.md): segment rules and rollout evaluation.
-// Only the signatures live here; tests derived from the spec are in test/author/.
-// Requirements: AC-1.3, AC-2.x, AC-3.5, AC-4.1 to AC-4.4.
+import { assignVariant, bucketOf } from './assignment.js';
 
-/** Whether the user matches every condition of the segment (AND, spec 001 section 13). */
-export function matchesSegment(_segment: SegmentConfig, _user: UserContext): boolean {
-  throw new Error('not implemented: reserved for author');
+function matchesCondition(condition: SegmentCondition, user: UserContext): boolean {
+  if (!Object.hasOwn(user.attributes, condition.attribute)) return false;
+  const value = user.attributes[condition.attribute];
+  if (value === undefined) return false;
+  switch (condition.operator) {
+    case 'equals':
+      return value === condition.value;
+    case 'not_equals':
+      return typeof value === typeof condition.value && value !== condition.value;
+    case 'in':
+      return (
+        (typeof value === 'string' || typeof value === 'number') && condition.value.includes(value)
+      );
+    case 'not_in':
+      return (
+        (typeof value === 'string' || typeof value === 'number') && !condition.value.includes(value)
+      );
+    case 'greater_than':
+      return typeof value === 'number' && value > condition.value;
+    case 'less_than':
+      return typeof value === 'number' && value < condition.value;
+    case 'contains':
+      return (typeof value === 'string' || Array.isArray(value)) && value.includes(condition.value);
+  }
 }
 
-/** Value of a flag for a user: the served value or the flag default. */
+/** All conditions must match, with no implicit type coercion. */
+export function matchesSegment(segment: SegmentConfig, user: UserContext): boolean {
+  return segment.rules.conditions.every((condition) => matchesCondition(condition, user));
+}
+
+function isTargeted(
+  key: string | null,
+  user: UserContext,
+  segments: ReadonlyMap<string, SegmentConfig>,
+): boolean {
+  if (key === null) return true;
+  const segment = segments.get(key);
+  return segment !== undefined && matchesSegment(segment, user);
+}
+
 export function evaluateFlag(
-  _flag: FlagConfig,
-  _user: UserContext,
-  _segments: ReadonlyMap<string, SegmentConfig>,
+  flag: FlagConfig,
+  user: UserContext,
+  segments: ReadonlyMap<string, SegmentConfig>,
 ): FlagValue {
-  throw new Error('not implemented: reserved for author');
+  if (!flag.enabled || !isTargeted(flag.segmentKey, user, segments)) return flag.defaultValue;
+  return bucketOf(flag.key, flag.salt, user.id) < flag.rolloutBps
+    ? flag.servedValue
+    : flag.defaultValue;
 }
 
-/** Variant key of a user in an experiment; the control variant when the user is not assigned. */
 export function evaluateExperiment(
-  _experiment: ExperimentConfig,
-  _user: UserContext,
-  _segments: ReadonlyMap<string, SegmentConfig>,
+  experiment: ExperimentConfig,
+  user: UserContext,
+  segments: ReadonlyMap<string, SegmentConfig>,
 ): string {
-  throw new Error('not implemented: reserved for author');
+  if (experiment.status === 'running' && isTargeted(experiment.segmentKey, user, segments)) {
+    return assignVariant(experiment, user.id);
+  }
+  const control = experiment.variants.find((variant) => variant.isControl);
+  if (control === undefined) throw new Error('Invalid experiment: missing control variant');
+  return control.key;
 }

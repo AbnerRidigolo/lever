@@ -7,7 +7,6 @@ import { STORE_URL } from '../env';
 const env = parseEnv(
   z.object({
     DATABASE_URL: dbEnvSchema.shape.DATABASE_URL,
-    LEVER_E2E_AUTHOR_READY: z.enum(['0', '1']).default('0'),
   }),
   process.env,
 );
@@ -28,12 +27,3 @@ export const DECISION_URL = 'http://localhost:4102';
  * e2e/prepare.ts recreates on every run (only its hash is stored there).
  */
 export const E2E_API_KEY = `lvr_dev_${'store-e2e-fictitious-key'.padEnd(43, '0')}`;
-
-/**
- * The flows whose result depends on the author's evaluation (`@lever/evaluation` still throws
- * `not implemented`) run only with LEVER_E2E_AUTHOR_READY=1.
- */
-export const AUTHOR_READY = env.LEVER_E2E_AUTHOR_READY === '1';
-export const AUTHOR_PENDING_REASON =
-  'needs the author evaluation in @lever/evaluation (still not implemented); ' +
-  'run with LEVER_E2E_AUTHOR_READY=1 once it lands';
