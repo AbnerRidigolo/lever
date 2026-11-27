@@ -1,15 +1,22 @@
-import { experimentVariantsSchema, flagConfigSchema } from '@lever/schemas';
-import { asc, count, eq } from 'drizzle-orm';
+import {
+  experimentMetricsSchema,
+  experimentVariantsSchema,
+  flagConfigSchema,
+  metricDefinitionSchema,
+} from '@lever/schemas';
+import { and, asc, count, eq, inArray } from 'drizzle-orm';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import {
   auditLog,
   environments,
   experimentEnvironments,
+  experimentMetrics,
   experiments,
   experimentVariants,
   flagEnvironments,
   flags,
+  metrics,
   projectMembers,
   projects,
   users,
@@ -113,12 +120,116 @@ describe('seed', () => {
     const rows = await db
       .select({ resourceType: auditLog.resourceType, action: auditLog.action })
       .from(auditLog)
-      .where(eq(auditLog.projectId, SEED_IDS.project))
+      .where(
+        and(
+          eq(auditLog.projectId, SEED_IDS.project),
+          inArray(auditLog.resourceType, ['flag', 'experiment']),
+        ),
+      )
       .orderBy(asc(auditLog.resourceType));
     expect(rows).toEqual([
       { resourceType: 'flag', action: 'create' },
       { resourceType: 'experiment', action: 'create' },
     ]);
+  });
+
+  it('002/AC-4.1 (data): creates the demo metrics', async () => {
+    const rows = await db
+      .select({
+        key: metrics.key,
+        name: metrics.name,
+        type: metrics.type,
+        eventName: metrics.eventName,
+        valueProperty: metrics.valueProperty,
+        denominatorEventName: metrics.denominatorEventName,
+        direction: metrics.direction,
+      })
+      .from(metrics)
+      .where(eq(metrics.projectId, SEED_IDS.project))
+      .orderBy(asc(metrics.key));
+
+    const parsed = rows.map((row) =>
+      metricDefinitionSchema.parse({
+        ...row,
+        valueProperty: row.valueProperty ?? undefined,
+        denominatorEventName: row.denominatorEventName ?? undefined,
+      }),
+    );
+    expect(
+      parsed.map((metric) => ({
+        key: metric.key,
+        type: metric.type,
+        eventName: metric.eventName,
+        direction: metric.direction,
+      })),
+    ).toEqual([
+      { key: 'add-to-cart-rate', type: 'ratio', eventName: 'add_to_cart', direction: 'increase' },
+      {
+        key: 'checkout-conversion',
+        type: 'conversion',
+        eventName: 'purchase',
+        direction: 'increase',
+      },
+      {
+        key: 'checkout-error-rate',
+        type: 'conversion',
+        eventName: 'checkout_error',
+        direction: 'decrease',
+      },
+      { key: 'revenue-per-user', type: 'mean', eventName: 'purchase', direction: 'increase' },
+    ]);
+    expect(rows.find((row) => row.key === 'revenue-per-user')?.valueProperty).toBe('revenueCents');
+    expect(rows.find((row) => row.key === 'add-to-cart-rate')?.denominatorEventName).toBe(
+      'product_view',
+    );
+  });
+
+  it('002/AC-4.2 (data): checkout-layout has one primary metric', async () => {
+    const rows = await db
+      .select({ metricKey: metrics.key, role: experimentMetrics.role })
+      .from(experimentMetrics)
+      .innerJoin(metrics, eq(metrics.id, experimentMetrics.metricId))
+      .where(eq(experimentMetrics.experimentId, SEED_IDS.checkoutLayoutExperiment))
+      .orderBy(asc(metrics.key));
+
+    const entries = experimentMetricsSchema.parse(rows);
+    expect(entries).toEqual([
+      { metricKey: 'add-to-cart-rate', role: 'secondary' },
+      { metricKey: 'checkout-conversion', role: 'primary' },
+      { metricKey: 'checkout-error-rate', role: 'guardrail' },
+      { metricKey: 'revenue-per-user', role: 'secondary' },
+    ]);
+  });
+
+  it('002/AC-5.4 (data): checkout-layout plans 14,748 users per variant', async () => {
+    const [experiment] = await db
+      .select({
+        plannedSampleSize: experiments.plannedSampleSize,
+        mdeKind: experiments.mdeKind,
+        mde: experiments.mde,
+        alpha: experiments.alpha,
+        power: experiments.power,
+      })
+      .from(experiments)
+      .where(eq(experiments.id, SEED_IDS.checkoutLayoutExperiment));
+    expect(experiment).toEqual({
+      plannedSampleSize: 14_748,
+      mdeKind: 'absolute',
+      mde: 0.01,
+      alpha: 0.05,
+      power: 0.8,
+    });
+  });
+
+  it('002/AC-4.4 (data): records the creation of each seeded metric', async () => {
+    const rows = await db
+      .select({ resourceId: auditLog.resourceId, action: auditLog.action })
+      .from(auditLog)
+      .where(and(eq(auditLog.projectId, SEED_IDS.project), eq(auditLog.resourceType, 'metric')));
+    expect(rows.map((row) => row.resourceId).sort()).toEqual(
+      Object.values(SEED_IDS.metrics).sort(),
+    );
+    expect(rows.every((row) => row.action === 'create')).toBe(true);
   });
 
   it('is idempotent: running it again creates no duplicates', async () => {
@@ -132,6 +243,8 @@ describe('seed', () => {
       experiments,
       experimentVariants,
       experimentEnvironments,
+      metrics,
+      experimentMetrics,
       auditLog,
     ] as const;
     const countAll = () =>
