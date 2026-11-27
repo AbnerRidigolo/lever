@@ -301,6 +301,43 @@ Esta etapa só entrega contratos, tabelas e infraestrutura. Os AC são cobertos 
 | Seção 7.2 (tabelas Iceberg)                                   | Fora: worktree `pipeline` |
 | Assinaturas de `packages/stats`                               | Fora: worktree `stats`    |
 
-## 5. Execução
+## 5. Execução (27/11/2026)
 
-A preencher na T6.
+Etapa concluída. Tarefas e commits:
+
+| Tarefa | Commit                                                                                          |
+| ------ | ----------------------------------------------------------------------------------------------- |
+| T1     | `71e66c3` feat(schemas): add event and order contracts for phase 2 (ajuste de teste: `f84ccb8`) |
+| T2     | `58431dc` feat(schemas): add metric, experiment plan and analysis contracts                     |
+| T3     | `c4d528c` feat(db): add phase 2 tables and migration                                            |
+| T4     | `066aee4` feat(db): seed demo metrics and checkout-layout plan                                  |
+| T5     | `16a345b` feat(infra): add local lakehouse with seaweedfs, iceberg rest and trino               |
+| Final  | `6072de0` fix(db,schemas): index phase 2 foreign keys and tighten analysis contracts            |
+| Final  | `c9d0890` fix(infra): put the local lakehouse behind a compose profile                          |
+
+Desvios em relação ao plano:
+
+- **Sem `infra/seaweedfs/s3.json`.** O SeaweedFS lê a identidade S3 das variáveis `AWS_ACCESS_KEY_ID` e `AWS_SECRET_ACCESS_KEY`, então o arquivo não é necessário.
+- **`lakehouse-init` com `chown` e nova tentativa.** Além de criar o bucket, ele dá ao usuário do catálogo (uid 1000) acesso de escrita ao volume do SQLite e repete o `s3.bucket.create` enquanto o master ainda elege o líder.
+- **Projeto do Compose novo no lugar de `down -v`.** Para testar a partir de um estado limpo, a verificação usou outro `COMPOSE_PROJECT_NAME`; nenhum volume foi apagado.
+- **`z.number()` sem o `.finite()` obsoleto.** O Zod 4 já rejeita `NaN` e infinito.
+- **Correções da revisão final (commits `6072de0` e `c9d0890`):**
+  - índices nas chaves estrangeiras das tabelas novas (`experiment_metrics.metric_id`, `experiment_results` e `srm_checks`), `CHECK planned_sample_size >= 1` e limite int4 no schema; a migration 0004, ainda não publicada, foi regenerada em vez de criar a 0005;
+  - contratos mais estritos: `sumY` inteiro em métricas de conversão, `ciLow` e `ciHigh` ambos nulos ou ambos preenchidos, `srmInputSchema` com ao menos duas variantes e sem chaves repetidas, chaves de propriedades de evento com 1 a 64 caracteres;
+  - o lakehouse passou para o profile `lakehouse` do Compose (`docker compose --profile lakehouse up -d`), o Trino lê o bucket de `LAKE_BUCKET`, o CI imprime os logs quando o smoke falha e o `.env.example` explica que `LAKE_S3_ENDPOINT` é para clientes no host;
+  - correções de texto: linha `collector` da tabela de worktrees da spec e a seção "O que o seed cria" do README.
+
+Resultados da verificação final:
+
+- `lint`, `typecheck` e `test` (Turborepo): todos passam. Testes: schemas 115, store 107, sdk 98, decision 67, console 67, db 63.
+- `prettier --check` passa em todos os arquivos versionados. Nesta máquina, o comando `pnpm <script>` da raiz não rodou porque o binário nativo do pnpm 12.14.0 é um arquivo de texto no lugar do executável; os mesmos scripts foram executados com `turbo run lint lint:root`, `turbo run typecheck` e `turbo run test`.
+- `bash infra/lakehouse/smoke.sh` sai com 0: `count(*)` é 1 depois do insert e 1 depois do reinício do catálogo.
+
+O que fica de fora (menores adiados):
+
+- `srmCheckSchema` não confere se as chaves de `observed` e `expected` são as mesmas.
+- Não há teste unitário para `STORE_ORDER_STATUSES`.
+- O teste do índice parcial de `store_orders` não verifica `placed_at`.
+- Rodar o seed de novo não preenche o plano de um `checkout-layout` criado antes da T4; bancos locais antigos precisam ser recriados.
+- `fixedId` recria um `Map` a cada chamada.
+- `environment_id` de `experiment_results` e `srm_checks` não é forçado a ser igual ao da execução.
