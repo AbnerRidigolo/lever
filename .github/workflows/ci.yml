@@ -105,3 +105,20 @@ jobs:
             apps/console/test-results/
             apps/store/test-results/
           retention-days: 7
+
+  lakehouse:
+    name: Lakehouse smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # Fictitious local values (S3 keys included).
+      - name: Environment
+        run: cp .env.example .env
+
+      # Starts SeaweedFS, the Iceberg REST catalog and Trino, writes one Iceberg row and
+      # checks it survives a catalog restart.
+      - name: Lakehouse smoke
+        run: bash infra/lakehouse/smoke.sh
