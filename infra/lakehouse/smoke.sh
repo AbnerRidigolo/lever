@@ -1,14 +1,19 @@
 #!/usr/bin/env bash
 # Smoke test for the local lakehouse (SeaweedFS + Iceberg REST + Trino).
 # Run from the repository root: bash infra/lakehouse/smoke.sh
+# The services live in the `lakehouse` compose profile, enabled on every call below.
 # Creates lake.smoke, writes one row, restarts the catalog to prove it is persistent
 # (decision D3), and always drops the schema on exit. Any mismatch exits non-zero.
 set -euo pipefail
 
 SERVICES=(seaweedfs lakehouse-init iceberg-rest trino)
 
+compose() {
+  docker compose --profile lakehouse "$@"
+}
+
 trino_sql() {
-  docker compose exec -T trino trino --execute "$1"
+  compose exec -T trino trino --execute "$1"
 }
 
 # Prints the row count of lake.smoke.events as a bare number.
@@ -39,7 +44,7 @@ cleanup() {
 trap cleanup EXIT
 
 echo "Starting ${SERVICES[*]}"
-docker compose up -d --wait "${SERVICES[@]}"
+compose up -d --wait "${SERVICES[@]}"
 
 # Trino reports healthy before the catalog is guaranteed to answer, so retry briefly.
 for attempt in $(seq 1 30); do
@@ -63,8 +68,8 @@ trino_sql "INSERT INTO lake.smoke.events VALUES (1, 'smoke')" >/dev/null
 expect_one 'after insert'
 
 echo "Restarting iceberg-rest"
-docker compose restart iceberg-rest >/dev/null
-docker compose up -d --wait iceberg-rest >/dev/null
+compose restart iceberg-rest >/dev/null
+compose up -d --wait iceberg-rest >/dev/null
 expect_one 'after catalog restart'
 
 echo "Smoke test passed"

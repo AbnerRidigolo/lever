@@ -118,7 +118,11 @@ jobs:
       - name: Environment
         run: cp .env.example .env
 
-      # Starts SeaweedFS, the Iceberg REST catalog and Trino, writes one Iceberg row and
-      # checks it survives a catalog restart.
+      # Starts SeaweedFS, the Iceberg REST catalog and Trino (compose profile `lakehouse`),
+      # writes one Iceberg row and checks it survives a catalog restart.
       - name: Lakehouse smoke
         run: bash infra/lakehouse/smoke.sh
+
+      - name: Lakehouse logs
+        if: failure()
+        run: docker compose --profile lakehouse logs --no-color --tail=200

@@ -37,7 +37,7 @@ corepack enable --install-directory "$(npm prefix -g)" pnpm
 ```bash
 cp .env.example .env     # valores fictícios para uso local
 pnpm install             # dependências
-docker compose up -d     # Postgres, Prometheus, Grafana, Tempo, Mailpit e o lakehouse
+docker compose up -d     # Postgres, Prometheus, Grafana, Tempo e Mailpit
 pnpm db:migrate          # aplica as migrations
 pnpm db:seed             # dados de exemplo
 pnpm test                # testes (usam Testcontainers: o Docker precisa estar rodando)
@@ -57,7 +57,9 @@ Se alguma porta já estiver em uso na sua máquina, troque-a no `.env` (`POSTGRE
 | Catálogo Iceberg | <http://localhost:8181> | API REST do Iceberg (`/v1/config`)                               |
 | Trino            | <http://localhost:8080> | usuário qualquer, catálogo `lake`                                |
 
-Para conferir o lakehouse (spec 002), rode `bash infra/lakehouse/smoke.sh` na raiz: ele sobe os quatro serviços, grava uma linha numa tabela Iceberg, reinicia o catálogo e confere que a linha continua lá. O Trino também aceita consultas manuais: `docker compose exec trino trino`.
+O lakehouse (spec 002) é pesado (uma JVM do Trino e a porta 8080), então fica no profile `lakehouse` do compose e não sobe com o comando acima. Para subi-lo: `docker compose --profile lakehouse up -d`. Os comandos `docker compose exec`, `logs` e `stop` dos serviços dele também precisam de `--profile lakehouse`.
+
+Para conferir o lakehouse, rode `bash infra/lakehouse/smoke.sh` na raiz: ele sobe os quatro serviços, grava uma linha numa tabela Iceberg, reinicia o catálogo e confere que a linha continua lá. O Trino também aceita consultas manuais: `docker compose exec trino trino`.
 
 ### O que o seed cria
 

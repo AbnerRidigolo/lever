@@ -1,6 +1,8 @@
 # Local infrastructure for Lever (specs 001 and 002): Postgres, Prometheus, Grafana, Tempo, Mailpit
 # and the lakehouse (SeaweedFS, Iceberg REST catalog and Trino).
-# Run from the repository root with `docker compose up -d` (see compose.yaml).
+# Run from the repository root with `docker compose up -d` (see compose.yaml). The lakehouse is
+# heavy (a Trino JVM and port 8080), so it sits behind the `lakehouse` profile:
+# `docker compose --profile lakehouse up -d`.
 # Variables come from the root .env; every one has a local default.
 
 name: lever
@@ -80,6 +82,7 @@ services:
       - '${MAILPIT_UI_PORT:-8025}:8025'
 
   seaweedfs:
+    profiles: [lakehouse]
     # Local S3 (lakehouse object store, decision D1 of the base-002 plan): master, volume,
     # filer and S3 gateway in one process. The S3 identity comes from the AWS_* variables.
     image: chrislusf/seaweedfs:4.53
@@ -100,6 +103,7 @@ services:
       retries: 24
 
   lakehouse-init:
+    profiles: [lakehouse]
     # One-shot: creates the lake bucket (idempotent) and gives the catalog user (uid 1000)
     # write access to its SQLite volume, then exits.
     image: chrislusf/seaweedfs:4.53
@@ -130,6 +134,7 @@ services:
       - iceberg-catalog-data:/catalog
 
   iceberg-rest:
+    profiles: [lakehouse]
     # Iceberg REST catalog (stands in for the Glue Data Catalog). The fixture is in-memory by
     # default; the JDBC catalog on a SQLite file keeps the tables across restarts (decision D3).
     # CATALOG_* become catalog properties: "__" is "-" and "_" is ".".
@@ -158,6 +163,7 @@ services:
       retries: 24
 
   trino:
+    profiles: [lakehouse]
     # SQL engine over the lake (stands in for Athena). The `lake` catalog is in
     # trino/catalog/lake.properties and reads the S3 settings from these variables.
     image: trinodb/trino:484
@@ -166,6 +172,7 @@ services:
       iceberg-rest:
         condition: service_healthy
     environment:
+      LAKE_BUCKET: ${LAKE_BUCKET:-lever-lake}
       LAKE_S3_ENDPOINT: http://seaweedfs:8333
       LAKE_S3_REGION: ${LAKE_S3_REGION:-us-east-1}
       LAKE_S3_ACCESS_KEY: ${LAKE_S3_ACCESS_KEY:-lever-local-access-key}
