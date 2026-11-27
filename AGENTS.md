@@ -13,7 +13,7 @@ A visão completa está em `docs/[ideacao.md](http://ideacao.md)`. As specs de c
 1. **Nenhum código sem spec.** Antes de começar, leia a spec da tarefa em `specs/<NNN>-<nome>/[spec.md](http://spec.md)` por inteiro.
 2. **A spec manda.** Se o pedido contradiz a spec, siga a spec e avise.
 3. **Ambiguidade = pare e pergunte.** Se um requisito estiver ambíguo ou faltando, não invente: escreva a dúvida no fim do seu resumo e implemente só o que está claro.
-4. **Critérios de aceite são o teste.** Cada critério de aceite da spec deve ter pelo menos um teste automatizado correspondente. Cite o ID do critério no nome ou descrição do teste (ex.: `it('AC-1.2: ...')`). A partir da spec 002 os IDs recomeçam em cada spec: nos testes novos, use o prefixo da spec (ex.: `it('002/AC-1.2: ...')`).
+4. **Critérios de aceite são o teste.** Cada critério de aceite da spec deve ter pelo menos um teste automatizado correspondente. Cite o ID do critério no nome ou descrição do teste (ex.: `it('AC-1.2: ...')`).
 5. **Ao terminar**, liste quais requisitos (FR-xxx) e critérios (AC-x.x) foram cobertos e quais ficaram de fora.
 
 ## Estrutura do monorepo
@@ -26,7 +26,6 @@ services/
   decision/         Node + Fastify — configuração, avaliação e stream de flags/experimentos
   collector/        (fase 2) coleta de eventos
   pipeline/         (fase 2) extração do audit_log, ETL de pedidos e orquestração do pipeline
-  analysis/         (fase 2) job que lê a gold, roda a estatística do autor e grava os resultados
   recommendation/   (fase 3) busca vetorial + ranqueamento
   agents/           (fase 4) LangGraph.js
 packages/
