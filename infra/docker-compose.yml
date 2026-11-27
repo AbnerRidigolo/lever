@@ -96,8 +96,10 @@ services:
     volumes:
       - seaweedfs-data:/data
     healthcheck:
-      # The filer answers once the master and a volume server are up.
-      test: ['CMD-SHELL', 'wget -q -O /dev/null http://localhost:8888/ || exit 1']
+      # The filer answers once the master and a volume server are up. Use 127.0.0.1, not
+      # localhost: SeaweedFS listens on IPv4 only, and where Docker has IPv6 (GitHub runners)
+      # localhost resolves to ::1 first, which busybox wget does not fall back from.
+      test: ['CMD-SHELL', 'wget -q -O /dev/null http://127.0.0.1:8888/ || exit 1']
       interval: 5s
       timeout: 5s
       retries: 24

@@ -125,4 +125,9 @@ jobs:
 
       - name: Lakehouse logs
         if: failure()
-        run: docker compose --profile lakehouse logs --no-color --tail=200
+        run: |
+          docker compose --profile lakehouse ps -a
+          for c in $(docker compose --profile lakehouse ps -aq); do
+            docker inspect --format '{{.Name}} {{json .State.Health}}' "$c"
+          done
+          docker compose --profile lakehouse logs --no-color --tail=200
