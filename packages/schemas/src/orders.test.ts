@@ -30,6 +30,10 @@ describe('order contracts', () => {
     expect(etlOrderSchema.safeParse(rawOrder).success).toBe(true);
     expect(cleanOrderSchema.safeParse(rawOrder).success).toBe(false);
     expect(cleanOrderSchema.safeParse(cleanOrder).success).toBe(true);
+    expect(cleanOrderSchema.safeParse({ ...cleanOrder, customer: rawOrder.customer }).success).toBe(
+      false,
+    );
+    expect(cleanOrderSchema.safeParse({ ...cleanOrder, name: 'Ana' }).success).toBe(false);
   });
 
   it('002/AC-3.4: accepts only the 27 Brazilian states', () => {
