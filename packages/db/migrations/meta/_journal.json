@@ -29,6 +29,13 @@
       "when": 1793394011482,
       "tag": "0003_auth_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795803928135,
+      "tag": "0004_phase2_metrics_analysis_orders",
+      "breakpoints": true
     }
   ]
 }

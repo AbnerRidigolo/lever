@@ -1,7 +1,9 @@
+import { DEFAULT_ALPHA, DEFAULT_POWER } from '@lever/schemas';
 import { sql } from 'drizzle-orm';
 import {
   boolean,
   check,
+  doublePrecision,
   index,
   integer,
   pgTable,
@@ -13,7 +15,7 @@ import {
 } from 'drizzle-orm/pg-core';
 
 import { id, timestamps } from './columns.js';
-import { experimentStatusEnum } from './enums.js';
+import { experimentStatusEnum, mdeKindEnum } from './enums.js';
 import { environments, projects } from './projects.js';
 import { segments } from './segments.js';
 
@@ -33,11 +35,21 @@ export const experiments = pgTable(
     segmentId: uuid('segment_id').references(() => segments.id, { onDelete: 'restrict' }),
     startedAt: timestamp('started_at', { withTimezone: true }),
     endedAt: timestamp('ended_at', { withTimezone: true }),
+    /** Experiment plan (spec 002, section 7.1). `mde` and `mde_kind` are set together or not at all. */
+    plannedSampleSize: integer('planned_sample_size'),
+    mdeKind: mdeKindEnum('mde_kind'),
+    mde: doublePrecision('mde'),
+    alpha: doublePrecision('alpha').notNull().default(DEFAULT_ALPHA),
+    power: doublePrecision('power').notNull().default(DEFAULT_POWER),
     ...timestamps(),
   },
   (table) => [
     unique('experiments_project_id_key_unique').on(table.projectId, table.key),
     index('experiments_segment_id_idx').on(table.segmentId),
+    check('experiments_alpha_range', sql`${table.alpha} BETWEEN 0.001 AND 0.2`),
+    check('experiments_power_range', sql`${table.power} BETWEEN 0.5 AND 0.99`),
+    check('experiments_mde_positive', sql`${table.mde} > 0`),
+    check('experiments_mde_with_kind', sql`(${table.mde} IS NULL) = (${table.mdeKind} IS NULL)`),
   ],
 );
 

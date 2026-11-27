@@ -67,3 +67,8 @@ export const cleanOrderSchema = z.strictObject({
   state: brazilianStateSchema,
 });
 export type CleanOrder = z.infer<typeof cleanOrderSchema>;
+
+/** Status of an order in the store's `store_orders` table: waiting for the ETL, or already loaded. */
+export const STORE_ORDER_STATUSES = ['pending_etl', 'loaded'] as const;
+export const storeOrderStatusSchema = z.enum(STORE_ORDER_STATUSES);
+export type StoreOrderStatus = z.infer<typeof storeOrderStatusSchema>;

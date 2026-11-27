@@ -1,3 +1,4 @@
+export * from './analysis.js';
 export * from './api-keys.js';
 export * from './audit.js';
 export * from './auth.js';
@@ -5,7 +6,9 @@ export * from './config-versions.js';
 export * from './enums.js';
 export * from './experiments.js';
 export * from './flags.js';
+export * from './metrics.js';
 export * from './projects.js';
 export * from './relations.js';
 export * from './segments.js';
+export * from './store-orders.js';
 export * from './users.js';

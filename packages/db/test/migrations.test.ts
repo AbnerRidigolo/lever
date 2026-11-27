@@ -14,19 +14,25 @@ describe('migrations', () => {
     `);
     expect(rows.map((row) => row.table_name)).toEqual([
       'accounts',
+      'analysis_runs',
       'api_keys',
       'audit_log',
       'config_versions',
       'environments',
       'experiment_environments',
+      'experiment_metrics',
+      'experiment_results',
       'experiment_variants',
       'experiments',
       'flag_environments',
       'flags',
+      'metrics',
       'project_members',
       'projects',
       'segments',
       'sessions',
+      'srm_checks',
+      'store_orders',
       'users',
       'verification_tokens',
     ]);
@@ -40,7 +46,7 @@ describe('migrations', () => {
         AND table_name NOT IN ('accounts', 'sessions', 'verification_tokens')
       GROUP BY table_name
     `);
-    expect(rows).toHaveLength(13);
+    expect(rows).toHaveLength(19);
     for (const row of rows) {
       expect(row.columns, row.table_name).toEqual(
         expect.arrayContaining(['id', 'created_at', 'updated_at']),
