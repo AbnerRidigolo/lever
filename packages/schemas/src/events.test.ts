@@ -56,6 +56,27 @@ describe('event contracts', () => {
     expect(eventPropertiesSchema.safeParse(keys(33)).success).toBe(false);
   });
 
+  it('002/AC-1.7: bounds property keys to 1 to 64 characters', () => {
+    expect(eventPropertiesSchema.safeParse({ '': 1 }).success).toBe(false);
+    expect(eventPropertiesSchema.safeParse({ ['k'.repeat(65)]: 1 }).success).toBe(false);
+    expect(eventPropertiesSchema.safeParse({ ['k'.repeat(64)]: 1 }).success).toBe(true);
+  });
+
+  it('002/AC-1.7: limits string property values to 1024 characters', () => {
+    expect(eventPropertiesSchema.safeParse({ a: 'x'.repeat(1024) }).success).toBe(true);
+    expect(eventPropertiesSchema.safeParse({ a: 'x'.repeat(1025) }).success).toBe(false);
+  });
+
+  it('002/AC-2.7: a track timestamp needs a UTC offset', () => {
+    const withTimestamp = (timestamp: string) => ({ ...validTrack, timestamp });
+    expect(collectorEventSchema.safeParse(withTimestamp('2026-11-27T12:00:00')).success).toBe(
+      false,
+    );
+    expect(collectorEventSchema.safeParse(withTimestamp('2026-11-27T12:00:00-03:00')).success).toBe(
+      true,
+    );
+  });
+
   it('002/AC-1.4: requires a uuid eventId on every collector event', () => {
     const { eventId: _omitted, ...withoutId } = validTrack;
     expect(collectorEventSchema.safeParse(validTrack).success).toBe(true);

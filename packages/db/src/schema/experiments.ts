@@ -46,6 +46,10 @@ export const experiments = pgTable(
   (table) => [
     unique('experiments_project_id_key_unique').on(table.projectId, table.key),
     index('experiments_segment_id_idx').on(table.segmentId),
+    check(
+      'experiments_planned_sample_size_min',
+      sql`${table.plannedSampleSize} IS NULL OR ${table.plannedSampleSize} >= 1`,
+    ),
     check('experiments_alpha_range', sql`${table.alpha} BETWEEN 0.001 AND 0.2`),
     check('experiments_power_range', sql`${table.power} BETWEEN 0.5 AND 0.99`),
     check('experiments_mde_positive', sql`${table.mde} > 0`),

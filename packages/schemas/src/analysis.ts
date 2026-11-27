@@ -7,12 +7,15 @@ export const MDE_KINDS = ['absolute', 'relative'] as const;
 export const mdeKindSchema = z.enum(MDE_KINDS);
 export type MdeKind = z.infer<typeof mdeKindSchema>;
 
+/** Largest value of a Postgres int4 column. */
+const INT4_MAX = 2_147_483_647;
+
 export const DEFAULT_ALPHA = 0.05;
 export const DEFAULT_POWER = 0.8;
 
 /** Sample-size plan of an experiment (002/AC-5.1, AC-5.4). */
 export const experimentPlanSchema = z.object({
-  plannedSampleSize: z.int().min(1).nullable(),
+  plannedSampleSize: z.int().min(1).max(INT4_MAX).nullable(),
   mde: z.object({ kind: mdeKindSchema, value: z.number().gt(0) }).nullable(),
   alpha: z.number().min(0.001).max(0.2).default(DEFAULT_ALPHA),
   power: z.number().min(0.5).max(0.99).default(DEFAULT_POWER),
@@ -68,11 +71,11 @@ export const variantStatsSchema = z
     // A conversion outcome is 0 or 1, so sum(y) equals sum(y^2) and cannot exceed n.
     if (value.metricType === 'conversion' && value.stats.kind === 'mean') {
       const { sumY, sumY2, n } = value.stats;
-      if (sumY !== sumY2 || sumY > n) {
+      if (!Number.isInteger(sumY) || sumY !== sumY2 || sumY > n) {
         ctx.addIssue({
           code: 'custom',
           path: ['stats'],
-          message: 'conversion statistics need sumY equal to sumY2 and at most n',
+          message: 'conversion statistics need an integer sumY equal to sumY2 and at most n',
         });
       }
     }
@@ -89,6 +92,10 @@ export const srmInputSchema = z.object({
         weightBps: basisPointsSchema,
       }),
     )
+    .min(2)
+    .refine((variants) => new Set(variants.map((v) => v.variantKey)).size === variants.length, {
+      message: 'variant keys must be unique',
+    })
     .refine((variants) => variants.reduce((sum, v) => sum + v.weightBps, 0) === MAX_BASIS_POINTS, {
       message: `weights must sum to ${MAX_BASIS_POINTS} bps`,
     }),
@@ -120,6 +127,10 @@ export const experimentResultSchema = z
     pValueAdjusted: probabilitySchema.nullable(),
     cuped: z.boolean(),
     method: resultMethodSchema,
+  })
+  .refine((row) => (row.ciLow === null) === (row.ciHigh === null), {
+    path: ['ciHigh'],
+    message: 'ciLow and ciHigh must both be set or both be null',
   })
   .refine((row) => row.ciLow === null || row.ciHigh === null || row.ciLow <= row.ciHigh, {
     path: ['ciLow'],

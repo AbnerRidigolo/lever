@@ -181,6 +181,14 @@ describe('experiment plan columns', () => {
     ).toBe(PG_CHECK_VIOLATION);
   });
 
+  it('002/AC-5.1: planned_sample_size must be at least 1', async () => {
+    const experiment = await insertExperiment(project.projectId, 'plan-sample-size');
+    const update = (plannedSampleSize: number) =>
+      db.update(experiments).set({ plannedSampleSize }).where(eq(experiments.id, experiment.id));
+    expect(await pgErrorCode(update(0))).toBe(PG_CHECK_VIOLATION);
+    await expect(update(1)).resolves.toBeDefined();
+  });
+
   it('002/AC-5.4: rejects power outside 0.5 to 0.99', async () => {
     const experiment = await insertExperiment(project.projectId, 'plan-power');
     for (const power of [0.49, 1]) {

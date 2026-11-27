@@ -70,6 +70,17 @@ describe('experimentPlanSchema', () => {
   });
 });
 
+describe('plannedSampleSize bound', () => {
+  it('002/AC-5.1: plannedSampleSize stays within the int4 range', () => {
+    const plan = (plannedSampleSize: number) => ({
+      plannedSampleSize,
+      mde: null,
+    });
+    expect(experimentPlanSchema.safeParse(plan(2_147_483_647)).success).toBe(true);
+    expect(experimentPlanSchema.safeParse(plan(2_147_483_648)).success).toBe(false);
+  });
+});
+
 describe('constants', () => {
   it('002/AC-7.2: SRM threshold is 0.001', () => {
     expect(SRM_P_VALUE_THRESHOLD).toBe(0.001);
@@ -85,6 +96,10 @@ describe('variantStatsSchema', () => {
     expect(variantStatsSchema.safeParse(conversion(10, 11, 11)).success).toBe(false);
     expect(variantStatsSchema.safeParse(conversion(10, 3, 4)).success).toBe(false);
     expect(variantStatsSchema.safeParse(conversion(10, 3, 3)).success).toBe(true);
+  });
+
+  it('002/AC-6.1: conversion statistics need an integer count of conversions', () => {
+    expect(variantStatsSchema.safeParse(conversion(10, 2.5, 2.5)).success).toBe(false);
   });
 
   it('ratio metrics need ratio statistics', () => {
@@ -115,6 +130,18 @@ describe('srmInputSchema', () => {
     expect(srmInputSchema.safeParse(variants(5_000, 4_000)).success).toBe(false);
     expect(srmInputSchema.safeParse(variants(5_000, 5_000)).success).toBe(true);
   });
+
+  it('002/AC-7.1: SRM input rejects duplicate variant keys and fewer than two variants', () => {
+    const duplicate = {
+      variants: [
+        { variantKey: 'one-page', users: 10, weightBps: 5_000 },
+        { variantKey: 'one-page', users: 10, weightBps: 5_000 },
+      ],
+    };
+    const single = { variants: [{ variantKey: 'one-page', users: 10, weightBps: 10_000 }] };
+    expect(srmInputSchema.safeParse(duplicate).success).toBe(false);
+    expect(srmInputSchema.safeParse(single).success).toBe(false);
+  });
 });
 
 describe('experimentResultSchema', () => {
@@ -135,5 +162,17 @@ describe('experimentResultSchema', () => {
       false,
     );
     expect(experimentResultSchema.safeParse({ ...result, pValue: 1.2 }).success).toBe(false);
+  });
+
+  it('002/AC-6.1: the confidence interval bounds are both set or both null', () => {
+    expect(experimentResultSchema.safeParse({ ...result, ciLow: 0.1, ciHigh: null }).success).toBe(
+      false,
+    );
+    expect(experimentResultSchema.safeParse({ ...result, ciLow: null, ciHigh: 0.2 }).success).toBe(
+      false,
+    );
+    expect(experimentResultSchema.safeParse({ ...result, ciLow: null, ciHigh: null }).success).toBe(
+      true,
+    );
   });
 });

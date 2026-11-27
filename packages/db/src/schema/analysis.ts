@@ -76,6 +76,11 @@ export const experimentResults = pgTable(
       table.variantKey,
       table.cuped,
     ),
+    index('experiment_results_experiment_id_environment_id_idx').on(
+      table.experimentId,
+      table.environmentId,
+    ),
+    index('experiment_results_metric_id_idx').on(table.metricId),
   ],
 );
 
@@ -101,5 +106,9 @@ export const srmChecks = pgTable(
   },
   (table) => [
     unique('srm_checks_run_experiment_unique').on(table.analysisRunId, table.experimentId),
+    index('srm_checks_experiment_id_environment_id_idx').on(
+      table.experimentId,
+      table.environmentId,
+    ),
   ],
 );

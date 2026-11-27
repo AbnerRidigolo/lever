@@ -1,5 +1,5 @@
 {
-  "id": "ac59bb32-b51d-40a7-b619-5070db931530",
+  "id": "660a87f8-d310-43aa-aa6a-36110c245316",
   "prevId": "16fad144-27f6-4231-9564-1f6a9c99d23e",
   "version": "7",
   "dialect": "postgresql",
@@ -228,7 +228,44 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "experiment_results_experiment_id_environment_id_idx": {
+          "name": "experiment_results_experiment_id_environment_id_idx",
+          "columns": [
+            {
+              "expression": "experiment_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "environment_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "experiment_results_metric_id_idx": {
+          "name": "experiment_results_metric_id_idx",
+          "columns": [
+            {
+              "expression": "metric_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "experiment_results_analysis_run_id_analysis_runs_id_fk": {
           "name": "experiment_results_analysis_run_id_analysis_runs_id_fk",
@@ -369,7 +406,29 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "srm_checks_experiment_id_environment_id_idx": {
+          "name": "srm_checks_experiment_id_environment_id_idx",
+          "columns": [
+            {
+              "expression": "experiment_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "environment_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "srm_checks_analysis_run_id_analysis_runs_id_fk": {
           "name": "srm_checks_analysis_run_id_analysis_runs_id_fk",
@@ -1352,6 +1411,10 @@
       },
       "policies": {},
       "checkConstraints": {
+        "experiments_planned_sample_size_min": {
+          "name": "experiments_planned_sample_size_min",
+          "value": "\"experiments\".\"planned_sample_size\" IS NULL OR \"experiments\".\"planned_sample_size\" >= 1"
+        },
         "experiments_alpha_range": {
           "name": "experiments_alpha_range",
           "value": "\"experiments\".\"alpha\" BETWEEN 0.001 AND 0.2"
@@ -1661,6 +1724,21 @@
         }
       },
       "indexes": {
+        "experiment_metrics_metric_id_idx": {
+          "name": "experiment_metrics_metric_id_idx",
+          "columns": [
+            {
+              "expression": "metric_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "experiment_metrics_one_primary_idx": {
           "name": "experiment_metrics_one_primary_idx",
           "columns": [

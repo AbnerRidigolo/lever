@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import {
@@ -10,6 +10,7 @@ import {
 } from '../src/schema/index.js';
 import {
   createTestProject,
+  PG_FOREIGN_KEY_VIOLATION,
   PG_UNIQUE_VIOLATION,
   pgErrorCode,
   type TestProject,
@@ -86,6 +87,42 @@ describe('experiment results', () => {
     await expect(
       db.insert(experimentResults).values(resultRow(run.id, { cuped: true })),
     ).resolves.toBeDefined();
+  });
+
+  it('002/FR-009: a metric referenced by a result cannot be deleted', async () => {
+    const [metric] = await db
+      .insert(metrics)
+      .values({
+        projectId: project.projectId,
+        key: 'result-only-metric',
+        name: 'Result only metric',
+        type: 'conversion',
+        eventName: 'purchase',
+        direction: 'increase',
+      })
+      .returning();
+    if (metric === undefined) throw new Error('metric not inserted');
+    const run = await insertRun();
+    await db.insert(experimentResults).values(resultRow(run.id, { metricId: metric.id }));
+    expect(await pgErrorCode(db.delete(metrics).where(eq(metrics.id, metric.id)))).toBe(
+      PG_FOREIGN_KEY_VIOLATION,
+    );
+  });
+
+  it('002/FR-009: foreign keys of the analysis tables are indexed', async () => {
+    const rows = await db.execute<{ indexname: string; indexdef: string }>(sql`
+      SELECT indexname, indexdef FROM pg_indexes
+      WHERE tablename IN ('experiment_metrics', 'experiment_results', 'srm_checks')
+    `);
+    const defs = new Map(rows.map((row) => [row.indexname, row.indexdef]));
+    expect(defs.get('experiment_metrics_metric_id_idx')).toContain('(metric_id)');
+    expect(defs.get('experiment_results_experiment_id_environment_id_idx')).toContain(
+      '(experiment_id, environment_id)',
+    );
+    expect(defs.get('experiment_results_metric_id_idx')).toContain('(metric_id)');
+    expect(defs.get('srm_checks_experiment_id_environment_id_idx')).toContain(
+      '(experiment_id, environment_id)',
+    );
   });
 
   it('002/FR-009: one SRM check per run and experiment', async () => {

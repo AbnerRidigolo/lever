@@ -113,8 +113,13 @@ ALTER TABLE "experiment_metrics" ADD CONSTRAINT "experiment_metrics_experiment_i
 ALTER TABLE "experiment_metrics" ADD CONSTRAINT "experiment_metrics_metric_id_metrics_id_fk" FOREIGN KEY ("metric_id") REFERENCES "public"."metrics"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "metrics" ADD CONSTRAINT "metrics_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "analysis_runs_environment_id_started_at_idx" ON "analysis_runs" USING btree ("environment_id","started_at");--> statement-breakpoint
+CREATE INDEX "experiment_results_experiment_id_environment_id_idx" ON "experiment_results" USING btree ("experiment_id","environment_id");--> statement-breakpoint
+CREATE INDEX "experiment_results_metric_id_idx" ON "experiment_results" USING btree ("metric_id");--> statement-breakpoint
+CREATE INDEX "srm_checks_experiment_id_environment_id_idx" ON "srm_checks" USING btree ("experiment_id","environment_id");--> statement-breakpoint
+CREATE INDEX "experiment_metrics_metric_id_idx" ON "experiment_metrics" USING btree ("metric_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "experiment_metrics_one_primary_idx" ON "experiment_metrics" USING btree ("experiment_id") WHERE "experiment_metrics"."role" = 'primary';--> statement-breakpoint
 CREATE INDEX "store_orders_pending_etl_idx" ON "store_orders" USING btree ("placed_at") WHERE "store_orders"."status" = 'pending_etl';--> statement-breakpoint
+ALTER TABLE "experiments" ADD CONSTRAINT "experiments_planned_sample_size_min" CHECK ("experiments"."planned_sample_size" IS NULL OR "experiments"."planned_sample_size" >= 1);--> statement-breakpoint
 ALTER TABLE "experiments" ADD CONSTRAINT "experiments_alpha_range" CHECK ("experiments"."alpha" BETWEEN 0.001 AND 0.2);--> statement-breakpoint
 ALTER TABLE "experiments" ADD CONSTRAINT "experiments_power_range" CHECK ("experiments"."power" BETWEEN 0.5 AND 0.99);--> statement-breakpoint
 ALTER TABLE "experiments" ADD CONSTRAINT "experiments_mde_positive" CHECK ("experiments"."mde" > 0);--> statement-breakpoint

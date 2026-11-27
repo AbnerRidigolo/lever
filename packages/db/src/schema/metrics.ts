@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { check, pgTable, text, unique, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { check, index, pgTable, text, unique, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 
 import { id, timestamps } from './columns.js';
 import { metricDirectionEnum, metricRoleEnum, metricTypeEnum } from './enums.js';
@@ -53,6 +53,7 @@ export const experimentMetrics = pgTable(
       table.experimentId,
       table.metricId,
     ),
+    index('experiment_metrics_metric_id_idx').on(table.metricId),
     uniqueIndex('experiment_metrics_one_primary_idx')
       .on(table.experimentId)
       .where(sql`${table.role} = 'primary'`),

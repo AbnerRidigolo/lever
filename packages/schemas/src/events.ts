@@ -12,7 +12,10 @@ export const MAX_EVENT_PROPERTY_STRING = 1024;
 
 /** Flat map of primitives: no nesting, no arrays; z.number() already rejects NaN and Infinity (002/AC-1.7). */
 export const eventPropertiesSchema = z
-  .record(z.string(), z.union([z.string().max(MAX_EVENT_PROPERTY_STRING), z.number(), z.boolean()]))
+  .record(
+    z.string().min(1).max(64),
+    z.union([z.string().max(MAX_EVENT_PROPERTY_STRING), z.number(), z.boolean()]),
+  )
   .refine((properties) => Object.keys(properties).length <= MAX_EVENT_PROPERTIES, {
     message: `at most ${MAX_EVENT_PROPERTIES} properties`,
   });

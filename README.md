@@ -67,6 +67,8 @@ Todos os dados são fictícios:
 - O usuário admin `admin@lever.local`.
 - A flag booleana **`new-banner`**, desligada nos dois ambientes. Quando ligada, serve `true` para 100% dos usuários.
 - O experimento **`checkout-layout`**, 50/50 entre `one-page` (controle) e `multi-step`. Está `running` em `development` e `draft` em `production`.
+- Quatro métricas no catálogo do projeto, ligadas ao `checkout-layout`: `checkout-conversion` (primária), `revenue-per-user` e `add-to-cart-rate` (secundárias) e `checkout-error-rate` (guardrail).
+- O plano de amostra do `checkout-layout`: 14.748 usuários por variante, MDE absoluto de 1 p.p., α 0,05 e poder 0,8.
 
 O seed pode ser rodado mais de uma vez sem duplicar dados.
 
