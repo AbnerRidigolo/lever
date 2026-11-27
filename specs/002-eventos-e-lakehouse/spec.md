@@ -3,7 +3,7 @@
 
 | Campo         | Valor                                                                                                                                                                   |
 | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Status        | Rascunho (27/11/2026). Todas as questões da seção 13 respondidas pelo autor em 27/11/2026; falta a aprovação final                                                                                                                      |
+| Status        | Aprovada pelo autor em 27/11/2026, com todas as questões da seção 13 respondidas                                                                                                                      |
 | Fase          | 2 de 5                                                                                                                                                                  |
 | Depende de    | Spec 001 concluída, inclusive a avaliação do autor em `packages/evaluation` (sem ela não há atribuição real nem exposições)                                              |
 | Pronta quando | o console mostra o resultado de um A/B da loja com efeito, intervalo de confiança e checagem de SRM, calculado a partir de eventos que passaram por bronze, silver e gold |
