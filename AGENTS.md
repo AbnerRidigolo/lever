@@ -25,6 +25,7 @@ apps/
 services/
   decision/         Node + Fastify — configuração, avaliação e stream de flags/experimentos
   collector/        (fase 2) coleta de eventos
+  pipeline/         (fase 2) extração do audit_log, ETL de pedidos e orquestração do pipeline
   recommendation/   (fase 3) busca vetorial + ranqueamento
   agents/           (fase 4) LangGraph.js
 packages/
@@ -33,6 +34,9 @@ packages/
   evaluation/       avaliação de flags e experimentos, usada pela decisão e pelo SDK (do autor)
   sdk/              SDK TypeScript publicado no npm (@lever/sdk)
   config/           tsconfig, eslint e prettier compartilhados
+data/
+  spark/            (fase 2) Python — jobs PySpark da silver
+  dbt/              (fase 2) modelos e testes da gold
 ml/                 (fase 3) Python — treino dos modelos
 infra/              Terraform, docker-compose, Grafana
 specs/              Specs do SDD, uma pasta por feature
