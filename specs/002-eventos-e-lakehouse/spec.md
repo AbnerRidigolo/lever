@@ -343,7 +343,8 @@ O evento de exposição estende o `exposureEventSchema` da spec 001 com `eventId
 
 ```
 { orderId, userId, placedAt, items: [{ productId, quantity, unitPriceCents }], totalCents,
-  customer: { name, address } }        → silver.orders sem customer.name e com o endereço reduzido a UF
+  customer: { name, address: { street, city, state } } }   → silver.orders sem customer.name e com o endereço reduzido a `state`
+  (`state`: uma das 27 UFs)
 ```
 
 **Opções novas do SDK**
