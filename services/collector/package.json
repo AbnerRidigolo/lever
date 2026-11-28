@@ -1,0 +1,39 @@
+{
+  "name": "@lever/collector",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Lever collector: authenticated event ingestion into the bronze layer",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsx watch --env-file-if-exists=../../.env --import ./src/telemetry.ts src/main.ts",
+    "start": "node --env-file-if-exists=../../.env --import ./dist/telemetry.js dist/main.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@fastify/otel": "0.21.2",
+    "@lever/db": "workspace:*",
+    "@lever/schemas": "workspace:*",
+    "@lever/service-kit": "workspace:*",
+    "@opentelemetry/api": "1.9.1",
+    "@opentelemetry/exporter-trace-otlp-http": "0.223.0",
+    "@opentelemetry/instrumentation-http": "0.223.0",
+    "@opentelemetry/sdk-node": "0.223.0",
+    "fastify": "5.12.7",
+    "fastify-plugin": "6.0.1",
+    "pino": "10.3.1",
+    "prom-client": "15.1.3",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@lever/config": "workspace:*",
+    "@types/node": "24.19.2",
+    "@vitest/coverage-v8": "5.0.5",
+    "eslint": "10.12.0",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
+  }
+}
