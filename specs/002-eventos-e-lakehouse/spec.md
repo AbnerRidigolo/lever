@@ -3,7 +3,7 @@
 
 | Campo         | Valor                                                                                                                                                                   |
 | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Status        | Rascunho (27/11/2026), aguardando revisão do autor                                                                                                                      |
+| Status        | Aprovada pelo autor em 27/11/2026, com todas as questões da seção 13 respondidas                                                                                                                      |
 | Fase          | 2 de 5                                                                                                                                                                  |
 | Depende de    | Spec 001 concluída, inclusive a avaliação do autor em `packages/evaluation` (sem ela não há atribuição real nem exposições)                                              |
 | Pronta quando | o console mostra o resultado de um A/B da loja com efeito, intervalo de confiança e checagem de SRM, calculado a partir de eventos que passaram por bronze, silver e gold |
@@ -28,7 +28,6 @@ A fase 1 decide "o que cada usuário vê". A fase 2 responde "e o que aconteceu 
 - Lakehouse em Iceberg com as camadas bronze, silver (Spark) e gold (dbt), com testes de qualidade.
 - Catálogo de métricas no console: conversão, receita por usuário e taxas por usuário, com papel primária, secundária ou de proteção.
 - Análise estatística de experimentos: diferença de proporções e de médias, intervalos de confiança, CUPED, SRM e tamanho de amostra.
-- Experimentos mutuamente exclusivos (camadas), adiados da spec 001.
 - Gerador de tráfego sintético com efeitos conhecidos, para validar a análise (testes A/A e A/B com efeito injetado).
 - Observabilidade da coleta e do pipeline: métricas, traces e o dashboard `Lever / Eventos`.
 
@@ -40,6 +39,7 @@ A fase 1 decide "o que cada usuário vê". A fase 2 responde "e o que aconteceu 
 - Testes sequenciais e bayesianos. Esta fase usa horizonte fixo com tamanho de amostra planejado.
 - SDK para o navegador. Os eventos de navegação da loja saem do servidor (Server Components e Server Actions).
 - Direito ao esquecimento e retenção configurável. Só há dados sintéticos.
+- Experimentos mutuamente exclusivos (camadas). A spec 001 os adiou para cá; agora vão para uma spec própria (Q8).
 
 ## 3. Atores
 
@@ -142,36 +142,26 @@ Como leitor, quero intervalos mais estreitos sem precisar de mais usuários.
 - **AC-8.3** Nos dados sintéticos com covariável correlacionada, o intervalo ajustado é mais estreito que o sem ajuste, e o efeito estimado continua sem viés (seção 8.6).
 - **AC-8.4** Usuários sem histórico no período anterior entram com covariável zero, sem serem excluídos.
 
-### US-9 — Experimentos mutuamente exclusivos (camadas)
-
-Como editor, quero que dois experimentos na mesma área da loja nunca atinjam o mesmo usuário, para que um não contamine o outro.
-
-- **AC-9.1** O editor cria uma camada no projeto e coloca experimentos nela, cada um com uma fatia do tráfego da camada (em pontos-base).
-- **AC-9.2** A soma das fatias dos experimentos de uma camada não passa de 10.000, e a fatia de um experimento não muda com ele em `running`.
-- **AC-9.3** Dados dois experimentos na mesma camada, quando 100.000 ids sintéticos são avaliados, nenhum id fica nos dois, e cada experimento recebe a fração da sua fatia com tolerância de ±0,5 ponto percentual.
-- **AC-9.4** Experimentos fora de camada continuam independentes entre si, como no AC-3.4 da spec 001.
-- **AC-9.5** O SDK e o serviço de decisão continuam com paridade total (AC-5.8 da spec 001), agora com camadas.
-
-### US-10 — Validar a plataforma com dados sintéticos
+### US-9 — Validar a plataforma com dados sintéticos
 
 Como autor do projeto, quero provar que a análise não inventa diferenças e encontra as reais.
 
-- **AC-10.1** O gerador de tráfego cria usuários sintéticos com atributos e comportamento configuráveis (taxa de base, distribuição de receita, correlação com o histórico) e envia os eventos pelo SDK de verdade, passando pelo coletor.
-- **AC-10.2** Teste A/A: em 1.000 experimentos A/A simulados com α = 0,05, a taxa de falsos positivos fica entre 3,6% e 6,4%.
-- **AC-10.3** Cobertura do intervalo: em 1.000 experimentos com efeito injetado conhecido, o intervalo de 95% contém o efeito verdadeiro em 93,6% a 96,4% dos casos.
-- **AC-10.4** Poder: em 200 experimentos com o tamanho planejado para poder de 0,8, o efeito injetado é detectado em 74% a 86% dos casos.
-- **AC-10.5** De ponta a ponta: o gerador roda o experimento `checkout-layout` na loja com um efeito injetado na conversão, o pipeline completo roda, e o console mostra um intervalo que contém esse efeito.
+- **AC-9.1** O gerador de tráfego cria usuários sintéticos com atributos e comportamento configuráveis (taxa de base, distribuição de receita, correlação com o histórico) e envia os eventos pelo SDK de verdade, passando pelo coletor.
+- **AC-9.2** Teste A/A: em 1.000 experimentos A/A simulados com α = 0,05, a taxa de falsos positivos fica entre 3,6% e 6,4%.
+- **AC-9.3** Cobertura do intervalo: em 1.000 experimentos com efeito injetado conhecido, o intervalo de 95% contém o efeito verdadeiro em 93,6% a 96,4% dos casos.
+- **AC-9.4** Poder: em 200 experimentos com o tamanho planejado para poder de 0,8, o efeito injetado é detectado em 74% a 86% dos casos.
+- **AC-9.5** De ponta a ponta: o gerador roda o experimento `checkout-layout` na loja com um efeito injetado na conversão, o pipeline completo roda, e o console mostra um intervalo que contém esse efeito.
 
-> As simulações dos AC-10.2 a 10.4 testam a estatística do autor diretamente sobre estatísticas suficientes geradas em memória, sem passar pelo lakehouse (rápido o bastante para o CI). O AC-10.5 é o único que passa por todas as camadas.
+> As simulações dos AC-9.2 a 9.4 testam a estatística do autor diretamente sobre estatísticas suficientes geradas em memória, sem passar pelo lakehouse (rápido o bastante para o CI). O AC-9.5 é o único que passa por todas as camadas.
 
-### US-11 — Loja instrumentada
+### US-10 — Loja instrumentada
 
 Como autor do projeto, quero que a loja gere os eventos de que a análise precisa.
 
-- **AC-11.1** A loja envia `page_view`, `product_view`, `add_to_cart`, `checkout_start` e `purchase`, com o mesmo id de usuário usado na avaliação (AC-8.4 da spec 001).
-- **AC-11.2** Cada pedido concluído gera um evento `purchase` (com `orderId` e `revenueCents`) e grava o pedido completo em `store_orders`, na mesma ação do checkout, para o ETL (US-3, AC-3.4). Se a gravação falhar, o checkout falha e o usuário vê o erro.
-- **AC-11.3** As exposições do `checkout-layout` e da flag `new-banner` chegam ao coletor (o hook deixa de só registrar em log).
-- **AC-11.4** O envio de eventos não muda o tempo de resposta das páginas da loja de forma perceptível (NFR-004).
+- **AC-10.1** A loja envia `page_view`, `product_view`, `add_to_cart`, `checkout_start`, `checkout_error` e `purchase`, com o mesmo id de usuário usado na avaliação (AC-8.4 da spec 001).
+- **AC-10.2** Cada pedido concluído gera um evento `purchase` (com `orderId` e `revenueCents`) e grava o pedido completo em `store_orders`, na mesma ação do checkout, para o ETL (US-3, AC-3.4). Se a gravação falhar, o checkout falha e o usuário vê o erro.
+- **AC-10.3** As exposições do `checkout-layout` e da flag `new-banner` chegam ao coletor (o hook deixa de só registrar em log).
+- **AC-10.4** O envio de eventos não muda o tempo de resposta das páginas da loja de forma perceptível (NFR-004).
 
 ## 5. Requisitos funcionais
 
@@ -188,9 +178,8 @@ Como autor do projeto, quero que a loja gere os eventos de que a análise precis
 | FR-008 | A gold produz, por experimento, ambiente, variante e métrica, as estatísticas suficientes que a análise precisa (seção 8.2).              |
 | FR-009 | O job de análise calcula efeitos, intervalos, p-valores, CUPED e SRM com a estatística do autor e grava o resultado no Postgres.          |
 | FR-010 | O console exibe resultados, alertas de SRM, progresso amostral e a calculadora de tamanho de amostra.                                     |
-| FR-011 | Experimentos podem pertencer a uma camada; experimentos da mesma camada são mutuamente exclusivos.                                        |
-| FR-012 | Um gerador de tráfego sintético produz usuários e eventos com efeitos conhecidos, usando o SDK.                                           |
-| FR-013 | Um comando único roda o pipeline local de ponta a ponta: extração, silver, gold, testes de qualidade e análise.                           |
+| FR-011 | Um gerador de tráfego sintético produz usuários e eventos com efeitos conhecidos, usando o SDK.                                           |
+| FR-012 | Um comando único roda o pipeline local de ponta a ponta: extração, silver, gold, testes de qualidade e análise.                           |
 
 
 ## 6. Requisitos não funcionais
@@ -202,7 +191,7 @@ Como autor do projeto, quero que a loja gere os eventos de que a análise precis
 | NFR-002 | Nenhum evento aceito com 202 se perde quando o destino da bronze cai e volta                                    | Teste de integração derrubando o contêiner do armazenamento |
 | NFR-003 | Pipeline local completo (bronze até resultados) com 1 milhão de eventos em menos de 10 minutos                  | Execução cronometrada com o gerador de tráfego               |
 | NFR-004 | `track()` no SDK: p99 abaixo de 0,1 ms; o envio não aumenta o p95 das páginas da loja em mais de 5 ms           | Vitest bench no SDK; E2E da loja com e sem envio             |
-| NFR-005 | Estatística validada: AC-10.2 a AC-10.4 passando no CI                                                          | Testes de simulação em `packages/stats`                      |
+| NFR-005 | Estatística validada: AC-9.2 a AC-9.4 passando no CI                                                          | Testes de simulação em `packages/stats`                      |
 | NFR-006 | Cobertura de testes acima de 80% em `services/collector`, `services/analysis` e no código de eventos do SDK     | Relatório do Vitest                                          |
 
 
@@ -217,15 +206,14 @@ Mesmas convenções da spec 001: `id` (uuid), `created_at` e `updated_at` em tod
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
 | `metrics`            | project\_id, key, name, type (`conversion`, `mean`, `ratio`), event\_name, value\_property, denominator\_event\_name, direction (`increase`, `decrease`)            | Única por projeto e chave; campos opcionais conforme o tipo, validados no Zod |
 | `experiment_metrics` | experiment\_id, metric\_id, role (`primary`, `secondary`, `guardrail`)                                                                                            | Exatamente uma `primary` por experimento (índice único parcial)             |
-| `experiments` (+)    | planned\_sample\_size, mde, alpha (padrão 0,05), power (padrão 0,8), layer\_id, layer\_allocation\_bps                                                              | Colunas novas                                                               |
-| `layers`             | project\_id, key, name, salt                                                                                                                                       | Salt gerado na criação, nunca alterado                                      |
+| `experiments` (+)    | planned\_sample\_size, mde, mde\_kind (`absolute` ou `relative`), alpha (padrão 0,05), power (padrão 0,8)                                                              | Colunas novas                                                               |
 | `analysis_runs`      | environment\_id, started\_at, finished\_at, status, data\_through, error                                                                                           | Uma linha por execução do job de análise                                    |
 | `experiment_results` | analysis\_run\_id, experiment\_id, environment\_id, metric\_id, variant\_key, users, value, delta\_abs, delta\_rel, ci\_low, ci\_high, p\_value, p\_value\_adjusted, cuped, method | Uma linha por métrica, variante e ajuste (com e sem CUPED)                  |
 | `srm_checks`         | analysis\_run\_id, experiment\_id, environment\_id, observed (jsonb), expected (jsonb), p\_value, excluded\_users                                                  |                                                                             |
 | `store_orders`       | order\_id, user\_id, items (jsonb), total\_cents, customer\_name, address (jsonb), status (`pending_etl`, `loaded`), placed\_at                                      | Pedidos fictícios da loja, fila do ETL (Q5, decidida). O ETL nunca apaga linhas; só muda o status                             |
 
 
-`audit_resource_type` ganha `metric` e `layer`.
+`audit_resource_type` ganha `metric`.
 
 ### 7.2 Lakehouse (Iceberg)
 
@@ -295,7 +283,7 @@ O experimento é planejado com um tamanho de amostra (US-5). Antes de atingi-lo,
 ### 8.6 Validação
 
 - **Contra referência:** casos de teste com valores esperados gerados por scipy e statsmodels, salvos como fixtures JSON em `packages/stats/test/fixtures/` com o script que os gerou. O teste em TypeScript compara com tolerância relativa de 1e-6.
-- **Por simulação:** os AC-10.2 a AC-10.4, com semente fixa para serem reproduzíveis.
+- **Por simulação:** os AC-9.2 a AC-9.4, com semente fixa para serem reproduzíveis.
 - **CUPED:** em dados com correlação de 0,7 entre covariável e métrica, a variância do efeito ajustado cai pelo menos 40%, e a média dos efeitos estimados em 1.000 simulações fica a menos de 2 erros padrão do efeito verdadeiro.
 
 ## 9. Decisões que viram ADR
@@ -303,12 +291,13 @@ O experimento é planejado com um tamanho de amostra (US-5). Antes de atingi-lo,
 
 | ADR     | Pergunta                                          | Direção inicial                                                                                                                                                                                                      |
 | ------- | ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ADR-006 | Lakehouse local ou na AWS nesta fase? (**D1**)    | **Decidido pelo autor em 27/11/2026: local.** Peças compatíveis com a AWS: MinIO no lugar do S3, catálogo Iceberg REST no lugar do Glue Data Catalog e Trino no lugar do Athena (o Athena v3 é baseado em Trino). dbt com `dbt-trino` agora e `dbt-athena` na 005. |
+| ADR-006 | Lakehouse local ou na AWS nesta fase? (**D1**)    | **Decidido pelo autor em 27/11/2026: local.** Peças compatíveis com a AWS: SeaweedFS no lugar do S3, catálogo Iceberg REST no lugar do Glue Data Catalog e Trino no lugar do Athena (o Athena v3 é baseado em Trino). dbt com `dbt-trino` agora e `dbt-athena` na 005. |
 | ADR-007 | Garantia de entrega dos eventos                   | "Pelo menos uma vez" do SDK até a bronze, deduplicação por `eventId` na silver. Sem tentar "exatamente uma vez" no coletor.                                                                                           |
 | ADR-008 | Onde fica a estatística?                          | A gold entrega estatísticas suficientes em SQL; os testes ficam em TypeScript (`packages/stats`), testáveis sem banco e reaproveitáveis pelos agentes da 004.                                                        |
 | ADR-009 | Por que ETL para pedidos e ELT para eventos?      | Pedidos têm dados pessoais e não podem existir crus no lakehouse, então são limpos antes de carregar. Eventos não têm dados pessoais e chegam crus, para permitir reprocessamento.                                  |
 | ADR-010 | Como capturar mudanças do Postgres (CDC)?         | Extração incremental do `audit_log`, que já é só inserção e tem o diff completo. O DMS entra na 005, se houver motivo.                                                                                               |
-| ADR-011 | Desenho das camadas (experimentos exclusivos)     | Um hash por camada (salt da camada) define o bucket; cada experimento da camada ocupa um intervalo de buckets. Dentro do intervalo, a variante usa o hash do próprio experimento. Algoritmo final é do autor.        |
+
+> **Nota (D1 do plano `base-002`, aprovada pelo autor).** O repositório `minio/minio` saiu do Docker Hub, porque o MinIO parou de publicar imagens da edição comunitária. O armazenamento S3 local passou a ser o SeaweedFS (`chrislusf/seaweedfs:4.53`). Nenhum contrato muda, porque ele fala S3. Veja a [ADR-006](../../docs/adr/0006-lakehouse-local.md).
 
 
 ## 10. Contratos
@@ -343,7 +332,8 @@ O evento de exposição estende o `exposureEventSchema` da spec 001 com `eventId
 
 ```
 { orderId, userId, placedAt, items: [{ productId, quantity, unitPriceCents }], totalCents,
-  customer: { name, address } }        → silver.orders sem customer.name e com o endereço reduzido a UF
+  customer: { name, address: { street, city, state } } }   → silver.orders sem customer.name e com o endereço reduzido a `state`
+  (`state`: uma das 27 UFs)
 ```
 
 **Opções novas do SDK**
@@ -373,37 +363,36 @@ Sem a opção `events`, o SDK se comporta exatamente como na spec 001.
 
 | Ordem | Worktree        | Escopo                                                                                                                                         | Quem                                                    |
 | ----- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| 0     | `base-002`      | `packages/schemas` (eventos, métricas, resultados, camadas, estatísticas suficientes), `packages/db` (tabelas e migration), MinIO, catálogo Iceberg e Trino no compose, `.env.example` | Agente, revisado pelo autor                             |
+| 0     | `base-002`      | `packages/schemas` (eventos, métricas, resultados, estatísticas suficientes), `packages/db` (tabelas e migration), SeaweedFS, catálogo Iceberg e Trino no compose, `.env.example` | Agente, revisado pelo autor                             |
 | 1     | `stats`         | `packages/stats`: testes, z, t de Welch, método delta, CUPED, SRM, Holm, tamanho de amostra                                                   | **Autor** (o agente entrega assinaturas, fixtures e testes) |
-| 1     | `layers`        | Camadas na atribuição de `packages/evaluation`                                                                                                 | **Autor**                                               |
 | 1     | `collector`     | `services/collector`: rota, validação, buffer, escrita na bronze, métricas e traces                                                           | Agente                                                  |
 | 1     | `sdk-events`    | `packages/sdk`: `track`, fila, lotes, reenvio, exposições para o coletor                                                                       | Agente                                                  |
 | 1     | `pipeline`      | `services/pipeline` (TypeScript: extração do `audit_log`, ETL de pedidos, comando `pipeline:run`), `data/spark` (jobs PySpark da silver) e `data/dbt` (modelos e testes da gold)                           | Agente                                                  |
-| 1     | `console-002`   | Catálogo de métricas, camadas, calculadora de tamanho de amostra e páginas de resultados                                                      | Agente                                                  |
+| 1     | `console-002`   | Catálogo de métricas, calculadora de tamanho de amostra e páginas de resultados                                                      | Agente                                                  |
 | 2     | `analysis`      | `services/analysis`: job que lê a gold, chama `packages/stats` e grava resultados                                                             | Agente (usa a estatística do autor)                     |
 | 2     | `store-002`     | Loja: eventos, pedidos para o ETL, exposições para o coletor                                                                                   | Agente                                                  |
 | 2     | `traffic`       | Gerador de tráfego sintético                                                                                                                   | Agente                                                  |
-| 3     | `quality-002`   | Simulações A/A e de poder, E2E de ponta a ponta (AC-10.5), k6 do coletor, dashboard, medições no README                                       | Agente, revisado pelo autor                             |
+| 3     | `quality-002`   | Simulações A/A e de poder, E2E de ponta a ponta (AC-9.5), k6 do coletor, dashboard, medições no README                                       | Agente, revisado pelo autor                             |
 
 
-A worktree 0 termina antes das demais e é a única que cria migration até a ordem 1 terminar. As de ordem 1 rodam em paralelo. `analysis` e `quality-002` dependem do `stats` do autor; o AC-10.5 depende também de `layers` só se o `checkout-layout` for movido para uma camada.
+A worktree 0 termina antes das demais e é a única que cria migration até a ordem 1 terminar. As de ordem 1 rodam em paralelo. `analysis` e `quality-002` dependem do `stats` do autor.
 
-## 13. Questões em aberto
+## 13. Questões e decisões
 
-Cada questão traz a direção proposta. Nada aqui está decidido até o autor responder.
+Todas as questões foram respondidas pelo autor em 27/11/2026.
 
 
-| #   | Questão                                                                                                                                                       | Direção proposta                                                                                                                                                                                                                             |
+| #   | Questão                                                                                                                                                       | Decisão                                                                                                                                                                                                                                      |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Q1  | Os IDs recomeçam em cada spec (AC-1.1 existe na 001 e na 002). Como citar nos testes?                                                                        | Prefixo da spec fora do próprio arquivo e nos testes novos (`002/AC-1.1`). Os testes da 001 continuam como estão. Se aceito, o AGENTS.md ganha uma linha sobre isso.                                                                        |
-| Q2  | Lakehouse local (MinIO, Iceberg REST, Trino) ou AWS de verdade já nesta fase? (D1)                                                                           | **Decidido pelo autor em 27/11/2026: local.** Motivos: como na spec 001, CI sem credenciais, custo zero e testes com Testcontainers. A ideação cita Firehose, Glue e Athena; eles entram na 005 trocando adaptadores (destino do coletor, catálogo e adapter do dbt), sem mudar contratos.   |
+| Q1  | Os IDs recomeçam em cada spec (AC-1.1 existe na 001 e na 002). Como citar nos testes?                                                                        | **Decidido pelo autor em 27/11/2026.** Prefixo da spec fora do próprio arquivo e nos testes novos (`002/AC-1.1`). Os testes da 001 continuam como estão. A regra já está no AGENTS.md.                                                                        |
+| Q2  | Lakehouse local (SeaweedFS, Iceberg REST, Trino) ou AWS de verdade já nesta fase? (D1)                                                                           | **Decidido pelo autor em 27/11/2026: local.** Motivos: como na spec 001, CI sem credenciais, custo zero e testes com Testcontainers. A ideação cita Firehose, Glue e Athena; eles entram na 005 trocando adaptadores (destino do coletor, catálogo e adapter do dbt), sem mudar contratos.   |
 | Q3  | Onde ficam os jobs Spark e o projeto dbt? O AGENTS.md não tem pasta para isso.                                                                               | **Decidido pelo autor em 27/11/2026:** `data/spark` (PySpark) e `data/dbt` para o Python e o SQL; `services/pipeline` para o TypeScript (extração do `audit_log`, handler do ETL de pedidos e orquestrador `pipeline:run`). Python fica restrito ao Spark e ao treino, como diz a ideação. A estrutura do AGENTS.md já foi atualizada.                                                                           |
-| Q4  | O job de análise é um serviço novo (`services/analysis`) ou parte do coletor?                                                                                | Serviço separado: o coletor precisa de baixa latência e o job é em lote. Ele roda como comando (`pnpm analysis:run`) e, localmente, a cada hora pelo compose. Expõe `/metrics` enquanto roda, como pede o AGENTS.md.                         |
+| Q4  | O job de análise é um serviço novo (`services/analysis`) ou parte do coletor?                                                                                | **Decidido pelo autor em 27/11/2026.** `services/analysis`, separado do coletor e do pipeline: o coletor precisa de baixa latência e o job é em lote. Ele roda como comando (`pnpm analysis:run`) e, localmente, a cada hora pelo compose. Expõe `/metrics` enquanto roda, como pede o AGENTS.md. A pasta já está na estrutura do AGENTS.md.                         |
 | Q5  | Como os pedidos chegam ao ETL? Hoje a loja não grava pedido nenhum.                                                                                           | **Decidido pelo autor em 27/11/2026: tabela `store_orders`.** A loja grava o pedido completo em `store_orders` (Postgres) na mesma ação do checkout, e o ETL lê os pendentes, limpa, carrega na silver e marca como `loaded`. Motivo: se o ETL cair, nenhum pedido se perde e a receita por usuário continua certa. A função do ETL tem a forma de um handler de Lambda, para virar Lambda na 005. Descartado: a loja chamar o ETL direto, que perderia pedidos com o ETL fora do ar. |
-| Q6  | O que mascarar nos pedidos?                                                                                                                                   | Remover o nome, reduzir o endereço à UF e manter `userId` (já é pseudônimo). Mesmo com dados fictícios, o ETL é testado como se fossem reais.                                                                                               |
-| Q7  | A métrica `ratio` (ex.: CTR) entra nesta fase?                                                                                                                | Sim, porque a fase 3 precisa de CTR de recomendações. Se pesar, fica para a 003 e esta fase entrega só `conversion` e `mean`.                                                                                                              |
-| Q8  | Camadas entram nesta fase? A spec 001 as adiou para cá.                                                                                                       | Sim (US-9), mas a atribuição é do autor. Se o autor preferir focar na estatística, a US-9 pode ir para uma spec própria sem afetar o resto desta.                                                                                           |
-| Q9  | Quais métricas de proteção padrão a loja usa?                                                                                                                 | Taxa de erro de checkout e tempo até a compra. Latência das páginas fica no Grafana, não no experimento, porque não é um evento por usuário.                                                                                               |
-| Q10 | Janela de CUPED de 14 dias e α = 0,001 no SRM estão bons?                                                                                                     | Sim como padrão, configuráveis por projeto numa spec futura.                                                                                                                                                                                 |
-| Q11 | O SDK deve deduplicar exposições em memória (mesmo usuário, experimento e variante), para reduzir volume?                                                    | Sim, com um LRU limitado. A análise usa a primeira exposição, então a deduplicação não muda nenhum resultado.                                                                                                                              |
-| Q12 | Os resultados são calculados também para `development`?                                                                                                       | Sim, para a demo local funcionar, mas o console mostra `production` por padrão e marca `development` como ambiente de teste.                                                                                                              |
+| Q6  | O que mascarar nos pedidos?                                                                                                                                   | **Decidido pelo autor em 27/11/2026.** Remover o nome, reduzir o endereço à UF e manter `userId` (já é pseudônimo). Mesmo com dados fictícios, o ETL é testado como se fossem reais.                                                                                               |
+| Q7  | A métrica `ratio` (ex.: CTR) entra nesta fase?                                                                                                                | **Decidido pelo autor em 27/11/2026.** Sim (tipo `ratio` do AC-4.1, com método delta), porque a fase 3 precisa do CTR das recomendações.                                                                                                              |
+| Q8  | Camadas entram nesta fase? A spec 001 as adiou para cá.                                                                                                       | **Decidido pelo autor em 27/11/2026: spec própria.** A história das camadas, o requisito, a tabela `layers`, o ADR-011 e a worktree `layers` saíram desta spec, e as histórias seguintes foram renumeradas. Motivo: a parte do autor nesta fase já é grande, e nada na demo da fase 2 precisa de camadas. Elas voltam numa spec curta quando dois experimentos disputarem a mesma área, provavelmente na fase 3.                                                                                           |
+| Q9  | Quais métricas de proteção padrão a loja usa?                                                                                                                 | **Decidido pelo autor em 27/11/2026.** Taxa de erro de checkout e tempo até a compra. Latência das páginas fica no Grafana, não no experimento, porque não é um evento por usuário. O "tempo até a compra" ficou fora do seed da fase 2 porque nenhum tipo de métrica do AC-4.1 o mede corretamente: `mean` conta zero para quem não comprou. Vai para uma spec futura (decisão D6 do plano base-002).                                                                                               |
+| Q10 | Janela de CUPED de 14 dias e α = 0,001 no SRM estão bons?                                                                                                     | **Decidido pelo autor em 27/11/2026.** Sim como padrão, configuráveis por projeto numa spec futura.                                                                                                                                                                                 |
+| Q11 | O SDK deve deduplicar exposições em memória (mesmo usuário, experimento e variante), para reduzir volume?                                                    | **Decidido pelo autor em 27/11/2026.** Sim, com um LRU limitado. A análise usa a primeira exposição, então a deduplicação não muda nenhum resultado.                                                                                                                              |
+| Q12 | Os resultados são calculados também para `development`?                                                                                                       | **Decidido pelo autor em 27/11/2026.** Sim, para a demo local funcionar, mas o console mostra `production` por padrão e marca `development` como ambiente de teste.                                                                                                              |

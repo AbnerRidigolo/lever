@@ -105,3 +105,29 @@ jobs:
             apps/console/test-results/
             apps/store/test-results/
           retention-days: 7
+
+  lakehouse:
+    name: Lakehouse smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # Fictitious local values (S3 keys included).
+      - name: Environment
+        run: cp .env.example .env
+
+      # Starts SeaweedFS, the Iceberg REST catalog and Trino (compose profile `lakehouse`),
+      # writes one Iceberg row and checks it survives a catalog restart.
+      - name: Lakehouse smoke
+        run: bash infra/lakehouse/smoke.sh
+
+      - name: Lakehouse logs
+        if: failure()
+        run: |
+          docker compose --profile lakehouse ps -a
+          for c in $(docker compose --profile lakehouse ps -aq); do
+            docker inspect --format '{{.Name}} {{json .State.Health}}' "$c"
+          done
+          docker compose --profile lakehouse logs --no-color --tail=200

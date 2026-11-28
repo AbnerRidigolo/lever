@@ -1,7 +1,10 @@
 import {
   experimentDefinitionSchema,
+  experimentMetricsSchema,
+  experimentPlanSchema,
   flagDefinitionSchema,
   flagEnvironmentSettingsSchemaFor,
+  metricDefinitionSchema,
   type EnvironmentKey,
   type ExperimentStatus,
 } from '@lever/schemas';
@@ -37,6 +40,24 @@ export const SEED_IDS = {
   audit: {
     newBannerCreated: '00000000-0000-4000-8000-000000000050',
     checkoutLayoutCreated: '00000000-0000-4000-8000-000000000051',
+  },
+  metrics: {
+    'checkout-conversion': '00000000-0000-4000-8000-000000000060',
+    'revenue-per-user': '00000000-0000-4000-8000-000000000061',
+    'add-to-cart-rate': '00000000-0000-4000-8000-000000000062',
+    'checkout-error-rate': '00000000-0000-4000-8000-000000000063',
+  },
+  checkoutLayoutMetrics: {
+    'checkout-conversion': '00000000-0000-4000-8000-000000000064',
+    'revenue-per-user': '00000000-0000-4000-8000-000000000065',
+    'add-to-cart-rate': '00000000-0000-4000-8000-000000000066',
+    'checkout-error-rate': '00000000-0000-4000-8000-000000000067',
+  },
+  metricAudit: {
+    'checkout-conversion': '00000000-0000-4000-8000-000000000068',
+    'revenue-per-user': '00000000-0000-4000-8000-000000000069',
+    'add-to-cart-rate': '00000000-0000-4000-8000-00000000006a',
+    'checkout-error-rate': '00000000-0000-4000-8000-00000000006b',
   },
 } as const;
 
@@ -91,3 +112,51 @@ export const checkoutLayoutStatusByEnvironment = {
   development: 'running',
   production: 'draft',
 } as const satisfies Record<EnvironmentKey, ExperimentStatus>;
+
+/** Demo metric catalog (002/AC-4.1). Keys match `SEED_IDS.metrics`. */
+export const seedMetrics = [
+  metricDefinitionSchema.parse({
+    key: 'checkout-conversion',
+    name: 'Checkout conversion',
+    type: 'conversion',
+    eventName: 'purchase',
+    direction: 'increase',
+  }),
+  metricDefinitionSchema.parse({
+    key: 'revenue-per-user',
+    name: 'Revenue per user',
+    type: 'mean',
+    eventName: 'purchase',
+    valueProperty: 'revenueCents',
+    direction: 'increase',
+  }),
+  metricDefinitionSchema.parse({
+    key: 'add-to-cart-rate',
+    name: 'Add-to-cart rate',
+    type: 'ratio',
+    eventName: 'add_to_cart',
+    denominatorEventName: 'product_view',
+    direction: 'increase',
+  }),
+  metricDefinitionSchema.parse({
+    key: 'checkout-error-rate',
+    name: 'Checkout error rate',
+    type: 'conversion',
+    eventName: 'checkout_error',
+    direction: 'decrease',
+  }),
+];
+
+/** One primary, two secondary and one guardrail (002/AC-4.2). */
+export const checkoutLayoutMetrics = experimentMetricsSchema.parse([
+  { metricKey: 'checkout-conversion', role: 'primary' },
+  { metricKey: 'revenue-per-user', role: 'secondary' },
+  { metricKey: 'add-to-cart-rate', role: 'secondary' },
+  { metricKey: 'checkout-error-rate', role: 'guardrail' },
+]);
+
+/** Reference case of 002/AC-5.1: 14,748 users per variant detect an absolute 1 p.p. lift. */
+export const checkoutLayoutPlan = experimentPlanSchema.parse({
+  plannedSampleSize: 14_748,
+  mde: { kind: 'absolute', value: 0.01 },
+});

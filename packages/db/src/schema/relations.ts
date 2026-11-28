@@ -1,10 +1,12 @@
 import { relations } from 'drizzle-orm';
 
+import { analysisRuns, experimentResults, srmChecks } from './analysis.js';
 import { apiKeys } from './api-keys.js';
 import { auditLog } from './audit.js';
 import { configVersions } from './config-versions.js';
 import { experimentEnvironments, experiments, experimentVariants } from './experiments.js';
 import { flagEnvironments, flags } from './flags.js';
+import { experimentMetrics, metrics } from './metrics.js';
 import { environments, projectMembers, projects } from './projects.js';
 import { segments } from './segments.js';
 import { users } from './users.js';
@@ -19,6 +21,7 @@ export const projectsRelations = relations(projects, ({ many }) => ({
   segments: many(segments),
   flags: many(flags),
   experiments: many(experiments),
+  metrics: many(metrics),
   auditLog: many(auditLog),
 }));
 
@@ -65,6 +68,7 @@ export const experimentsRelations = relations(experiments, ({ one, many }) => ({
   segment: one(segments, { fields: [experiments.segmentId], references: [segments.id] }),
   variants: many(experimentVariants),
   environments: many(experimentEnvironments),
+  metrics: many(experimentMetrics),
 }));
 
 export const experimentVariantsRelations = relations(experimentVariants, ({ one }) => ({
@@ -93,6 +97,59 @@ export const auditLogRelations = relations(auditLog, ({ one }) => ({
 export const configVersionsRelations = relations(configVersions, ({ one }) => ({
   environment: one(environments, {
     fields: [configVersions.environmentId],
+    references: [environments.id],
+  }),
+}));
+
+export const metricsRelations = relations(metrics, ({ one, many }) => ({
+  project: one(projects, { fields: [metrics.projectId], references: [projects.id] }),
+  experiments: many(experimentMetrics),
+}));
+
+export const experimentMetricsRelations = relations(experimentMetrics, ({ one }) => ({
+  experiment: one(experiments, {
+    fields: [experimentMetrics.experimentId],
+    references: [experiments.id],
+  }),
+  metric: one(metrics, { fields: [experimentMetrics.metricId], references: [metrics.id] }),
+}));
+
+export const analysisRunsRelations = relations(analysisRuns, ({ one, many }) => ({
+  environment: one(environments, {
+    fields: [analysisRuns.environmentId],
+    references: [environments.id],
+  }),
+  results: many(experimentResults),
+  srmChecks: many(srmChecks),
+}));
+
+export const experimentResultsRelations = relations(experimentResults, ({ one }) => ({
+  analysisRun: one(analysisRuns, {
+    fields: [experimentResults.analysisRunId],
+    references: [analysisRuns.id],
+  }),
+  experiment: one(experiments, {
+    fields: [experimentResults.experimentId],
+    references: [experiments.id],
+  }),
+  environment: one(environments, {
+    fields: [experimentResults.environmentId],
+    references: [environments.id],
+  }),
+  metric: one(metrics, { fields: [experimentResults.metricId], references: [metrics.id] }),
+}));
+
+export const srmChecksRelations = relations(srmChecks, ({ one }) => ({
+  analysisRun: one(analysisRuns, {
+    fields: [srmChecks.analysisRunId],
+    references: [analysisRuns.id],
+  }),
+  experiment: one(experiments, {
+    fields: [srmChecks.experimentId],
+    references: [experiments.id],
+  }),
+  environment: one(environments, {
+    fields: [srmChecks.environmentId],
     references: [environments.id],
   }),
 }));

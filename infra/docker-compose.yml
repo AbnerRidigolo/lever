@@ -1,5 +1,8 @@
-# Local infrastructure for Lever (spec 001): Postgres, Prometheus, Grafana, Tempo and Mailpit.
-# Run from the repository root with `docker compose up -d` (see compose.yaml).
+# Local infrastructure for Lever (specs 001 and 002): Postgres, Prometheus, Grafana, Tempo, Mailpit
+# and the lakehouse (SeaweedFS, Iceberg REST catalog and Trino).
+# Run from the repository root with `docker compose up -d` (see compose.yaml). The lakehouse is
+# heavy (a Trino JVM and port 8080), so it sits behind the `lakehouse` profile:
+# `docker compose --profile lakehouse up -d`.
 # Variables come from the root .env; every one has a local default.
 
 name: lever
@@ -78,8 +81,119 @@ services:
       - '${MAILPIT_SMTP_PORT:-1025}:1025'
       - '${MAILPIT_UI_PORT:-8025}:8025'
 
+  seaweedfs:
+    profiles: [lakehouse]
+    # Local S3 (lakehouse object store, decision D1 of the base-002 plan): master, volume,
+    # filer and S3 gateway in one process. The S3 identity comes from the AWS_* variables.
+    image: chrislusf/seaweedfs:4.53
+    restart: unless-stopped
+    command: ['server', '-dir=/data', '-s3', '-s3.port=8333']
+    environment:
+      AWS_ACCESS_KEY_ID: ${LAKE_S3_ACCESS_KEY:-lever-local-access-key}
+      AWS_SECRET_ACCESS_KEY: ${LAKE_S3_SECRET_KEY:-lever-local-secret-key}
+    ports:
+      - '${LAKE_S3_PORT:-8333}:8333'
+    volumes:
+      - seaweedfs-data:/data
+    healthcheck:
+      # The filer answers once the master and a volume server are up. Use 127.0.0.1, not
+      # localhost: SeaweedFS listens on IPv4 only, and where Docker has IPv6 (GitHub runners)
+      # localhost resolves to ::1 first, which busybox wget does not fall back from.
+      test: ['CMD-SHELL', 'wget -q -O /dev/null http://127.0.0.1:8888/ || exit 1']
+      interval: 5s
+      timeout: 5s
+      retries: 24
+
+  lakehouse-init:
+    profiles: [lakehouse]
+    # One-shot: creates the lake bucket (idempotent) and gives the catalog user (uid 1000)
+    # write access to its SQLite volume, then exits.
+    image: chrislusf/seaweedfs:4.53
+    depends_on:
+      seaweedfs:
+        condition: service_healthy
+    restart: 'no'
+    entrypoint: ['/bin/sh', '-c']
+    command:
+      - |
+        set -eu
+        chown 1000:1000 /catalog
+        # weed shell exits 0 even when a command fails, so read its output. The master may
+        # still be electing a leader right after startup ("Not current leader"): retry.
+        for attempt in $$(seq 1 30); do
+          out=$$(echo "s3.bucket.create -name $${LAKE_BUCKET}" | weed shell -master=seaweedfs:9333 2>&1 || true)
+          echo "$$out"
+          case "$$out" in
+            *"created bucket"*|*"already exists"*) exit 0 ;;
+          esac
+          sleep 2
+        done
+        echo "could not create bucket $${LAKE_BUCKET}" >&2
+        exit 1
+    environment:
+      LAKE_BUCKET: ${LAKE_BUCKET:-lever-lake}
+    volumes:
+      - iceberg-catalog-data:/catalog
+
+  iceberg-rest:
+    profiles: [lakehouse]
+    # Iceberg REST catalog (stands in for the Glue Data Catalog). The fixture is in-memory by
+    # default; the JDBC catalog on a SQLite file keeps the tables across restarts (decision D3).
+    # CATALOG_* become catalog properties: "__" is "-" and "_" is ".".
+    image: apache/iceberg-rest-fixture:1.10.1
+    restart: unless-stopped
+    depends_on:
+      lakehouse-init:
+        condition: service_completed_successfully
+    environment:
+      CATALOG_URI: jdbc:sqlite:file:/data/catalog.db
+      CATALOG_WAREHOUSE: s3://${LAKE_BUCKET:-lever-lake}/warehouse
+      CATALOG_IO__IMPL: org.apache.iceberg.aws.s3.S3FileIO
+      CATALOG_S3_ENDPOINT: http://seaweedfs:8333
+      CATALOG_S3_PATH__STYLE__ACCESS: 'true'
+      AWS_ACCESS_KEY_ID: ${LAKE_S3_ACCESS_KEY:-lever-local-access-key}
+      AWS_SECRET_ACCESS_KEY: ${LAKE_S3_SECRET_KEY:-lever-local-secret-key}
+      AWS_REGION: ${LAKE_S3_REGION:-us-east-1}
+    ports:
+      - '${ICEBERG_REST_PORT:-8181}:8181'
+    volumes:
+      - iceberg-catalog-data:/data
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -fsS http://localhost:8181/v1/config || exit 1']
+      interval: 5s
+      timeout: 5s
+      retries: 24
+
+  trino:
+    profiles: [lakehouse]
+    # SQL engine over the lake (stands in for Athena). The `lake` catalog is in
+    # trino/catalog/lake.properties and reads the S3 settings from these variables.
+    image: trinodb/trino:484
+    restart: unless-stopped
+    depends_on:
+      iceberg-rest:
+        condition: service_healthy
+    environment:
+      LAKE_BUCKET: ${LAKE_BUCKET:-lever-lake}
+      LAKE_S3_ENDPOINT: http://seaweedfs:8333
+      LAKE_S3_REGION: ${LAKE_S3_REGION:-us-east-1}
+      LAKE_S3_ACCESS_KEY: ${LAKE_S3_ACCESS_KEY:-lever-local-access-key}
+      LAKE_S3_SECRET_KEY: ${LAKE_S3_SECRET_KEY:-lever-local-secret-key}
+    ports:
+      - '${TRINO_PORT:-8080}:8080'
+    volumes:
+      - ./trino/catalog/lake.properties:/etc/trino/catalog/lake.properties:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'trino --execute "SELECT 1" >/dev/null 2>&1 || exit 1']
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 20s
+
 volumes:
   postgres-data:
   prometheus-data:
   grafana-data:
   tempo-data:
+  seaweedfs-data:
+  iceberg-catalog-data:

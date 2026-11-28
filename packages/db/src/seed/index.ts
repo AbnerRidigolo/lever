@@ -6,39 +6,48 @@ import {
   configVersions,
   environments,
   experimentEnvironments,
+  experimentMetrics,
   experiments,
   experimentVariants,
   flagEnvironments,
   flags,
+  metrics,
   projectMembers,
   projects,
   users,
 } from '../schema/index.js';
 import {
   checkoutLayoutExperiment,
+  checkoutLayoutMetrics,
+  checkoutLayoutPlan,
   checkoutLayoutStatusByEnvironment,
   newBannerFlag,
   newBannerSettings,
   SEED_IDS,
   seedAdmin,
+  seedMetrics,
   seedProject,
 } from './data.js';
 
 export * from './data.js';
 
-const variantIds = new Map<string, string>(Object.entries(SEED_IDS.checkoutLayoutVariants));
-
-function variantId(key: string): string {
-  const id = variantIds.get(key);
+function fixedId(ids: Record<string, string>, key: string, what: string): string {
+  const id = new Map(Object.entries(ids)).get(key);
   if (id === undefined) {
-    throw new Error(`seed: no fixed id for variant "${key}"`);
+    throw new Error(`seed: no fixed id for ${what} "${key}"`);
   }
   return id;
 }
 
+const variantId = (key: string) => fixedId(SEED_IDS.checkoutLayoutVariants, key, 'variant');
+const metricId = (key: string) => fixedId(SEED_IDS.metrics, key, 'metric');
+const experimentMetricId = (key: string) =>
+  fixedId(SEED_IDS.checkoutLayoutMetrics, key, 'experiment metric');
+
 /**
  * Inserts the demo project, its environments, an admin, the `new-banner` flag and the
- * `checkout-layout` experiment. Idempotent: rows that already exist are left untouched.
+ * `checkout-layout` experiment with its sample-size plan, the demo metrics and their
+ * attachment to the experiment. Idempotent: rows that already exist are left untouched.
  */
 export async function seed(db: Database): Promise<void> {
   await db.transaction(async (tx) => {
@@ -114,6 +123,11 @@ export async function seed(db: Database): Promise<void> {
         salt: checkoutLayoutExperiment.salt,
         segmentId: null,
         startedAt: checkoutLayoutExperiment.startedAt,
+        plannedSampleSize: checkoutLayoutPlan.plannedSampleSize,
+        mdeKind: checkoutLayoutPlan.mde?.kind ?? null,
+        mde: checkoutLayoutPlan.mde?.value ?? null,
+        alpha: checkoutLayoutPlan.alpha,
+        power: checkoutLayoutPlan.power,
       })
       .onConflictDoNothing();
 
@@ -138,6 +152,35 @@ export async function seed(db: Database): Promise<void> {
           experimentId: checkoutLayoutExperiment.id,
           environmentId: SEED_IDS.environments[key],
           status: checkoutLayoutStatusByEnvironment[key],
+        })),
+      )
+      .onConflictDoNothing();
+
+    await tx
+      .insert(metrics)
+      .values(
+        seedMetrics.map((metric) => ({
+          id: metricId(metric.key),
+          projectId: seedProject.id,
+          key: metric.key,
+          name: metric.name,
+          type: metric.type,
+          eventName: metric.eventName,
+          valueProperty: metric.type === 'mean' ? metric.valueProperty : null,
+          denominatorEventName: metric.type === 'ratio' ? metric.denominatorEventName : null,
+          direction: metric.direction,
+        })),
+      )
+      .onConflictDoNothing();
+
+    await tx
+      .insert(experimentMetrics)
+      .values(
+        checkoutLayoutMetrics.map((entry) => ({
+          id: experimentMetricId(entry.metricKey),
+          experimentId: checkoutLayoutExperiment.id,
+          metricId: metricId(entry.metricKey),
+          role: entry.role,
         })),
       )
       .onConflictDoNothing();
@@ -169,6 +212,16 @@ export async function seed(db: Database): Promise<void> {
             variants: checkoutLayoutExperiment.variants,
           },
         },
+        ...seedMetrics.map((metric) => ({
+          id: fixedId(SEED_IDS.metricAudit, metric.key, 'metric audit'),
+          projectId: seedProject.id,
+          actorId: seedAdmin.id,
+          action: 'create' as const,
+          resourceType: 'metric' as const,
+          resourceId: metricId(metric.key),
+          before: null,
+          after: { key: metric.key, type: metric.type },
+        })),
       ])
       .onConflictDoNothing();
   });
