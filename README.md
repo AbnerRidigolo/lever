@@ -16,6 +16,11 @@ Da spec 001 estão prontos:
 - **Etapa `sdk`:** o SDK para servidor em [`packages/sdk`](packages/sdk/README.md) (veja [SDK](#sdk)).
 - **Etapa `store`:** a loja de demonstração em [`apps/store`](apps/store/README.md), em <http://localhost:3002>. Usa o SDK por padrão, ou um stub sem serviço de decisão (`LEVER_ADAPTER=stub`).
 
+Da spec 002 ([Eventos e lakehouse](specs/002-eventos-e-lakehouse/spec.md)) estão prontos:
+
+- **Etapa `base-002`:** contratos de eventos, tabelas, seed e o lakehouse local (SeaweedFS, catálogo Iceberg e Trino).
+- **Etapa `collector`:** o coletor de eventos em [`services/collector`](services/collector/README.md), em <http://localhost:4100>. Grava os eventos aceitos na bronze, como objetos no S3 do lakehouse.
+
 ## Pré-requisitos
 
 - **Node.js 24** (há um `.nvmrc`)
@@ -45,17 +50,18 @@ pnpm test                # testes (usam Testcontainers: o Docker precisa estar r
 
 Se alguma porta já estiver em uso na sua máquina, troque-a no `.env` (`POSTGRES_PORT`, `PROMETHEUS_PORT`, `GRAFANA_PORT`, `TEMPO_PORT`, `OTLP_HTTP_PORT`, `LAKE_S3_PORT`, `ICEBERG_REST_PORT`, `TRINO_PORT`). Se trocar a do Postgres, ajuste também o `DATABASE_URL`.
 
-| Serviço          | Endereço                | Acesso                                                           |
-| ---------------- | ----------------------- | ---------------------------------------------------------------- |
-| Postgres         | `localhost:5432`        | usuário e senha do `.env`                                        |
-| Prometheus       | <http://localhost:9090> | —                                                                |
-| Mailpit          | <http://localhost:8025> | caixa de entrada local dos links mágicos                         |
-| Grafana          | <http://localhost:3001> | `GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD`                  |
-| Tempo            | `localhost:4318` (OTLP) | traces, vistos no Grafana (datasource Tempo)                     |
-| Loja             | <http://localhost:3002> | `pnpm --filter @lever/store dev`                                 |
-| S3 (SeaweedFS)   | <http://localhost:8333> | `LAKE_S3_ACCESS_KEY` / `LAKE_S3_SECRET_KEY`, bucket `lever-lake` |
-| Catálogo Iceberg | <http://localhost:8181> | API REST do Iceberg (`/v1/config`)                               |
-| Trino            | <http://localhost:8080> | usuário qualquer, catálogo `lake`                                |
+| Serviço          | Endereço                | Acesso                                                                |
+| ---------------- | ----------------------- | --------------------------------------------------------------------- |
+| Postgres         | `localhost:5432`        | usuário e senha do `.env`                                             |
+| Prometheus       | <http://localhost:9090> | —                                                                     |
+| Mailpit          | <http://localhost:8025> | caixa de entrada local dos links mágicos                              |
+| Grafana          | <http://localhost:3001> | `GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD`                       |
+| Tempo            | `localhost:4318` (OTLP) | traces, vistos no Grafana (datasource Tempo)                          |
+| Loja             | <http://localhost:3002> | `pnpm --filter @lever/store dev`                                      |
+| Coletor          | <http://localhost:4100> | `pnpm --filter @lever/collector dev` (precisa do profile `lakehouse`) |
+| S3 (SeaweedFS)   | <http://localhost:8333> | `LAKE_S3_ACCESS_KEY` / `LAKE_S3_SECRET_KEY`, bucket `lever-lake`      |
+| Catálogo Iceberg | <http://localhost:8181> | API REST do Iceberg (`/v1/config`)                                    |
+| Trino            | <http://localhost:8080> | usuário qualquer, catálogo `lake`                                     |
 
 O lakehouse (spec 002) é pesado (uma JVM do Trino e a porta 8080), então fica no profile `lakehouse` do compose e não sobe com o comando acima. Para subi-lo: `docker compose --profile lakehouse up -d`. Os comandos `docker compose exec`, `logs` e `stop` dos serviços dele também precisam de `--profile lakehouse`.
 
@@ -116,7 +122,7 @@ apps/
   store/            Next.js — loja de demonstração (worktree store)
 services/
   decision/         Fastify — configuração, avaliação e stream (worktree decision)
-  collector/        fase 2
+  collector/        Fastify — coleta de eventos para a bronze (fase 2)
   recommendation/   fase 3
   agents/           fase 4
 packages/
@@ -124,6 +130,7 @@ packages/
   schemas/          contratos Zod (fonte da verdade dos tipos) e formato de erro
   db/               schema Drizzle, migrations, seed e testes de integração
   sdk/              SDK TypeScript (worktree sdk)
+  service-kit/      código Fastify compartilhado pelos serviços: auth por API key, erros, logger, health e métricas HTTP
 ml/                 fase 3
 infra/              docker-compose, Prometheus, Grafana, k6
 specs/              specs do SDD

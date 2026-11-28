@@ -34,6 +34,7 @@ packages/
   db/               Drizzle — schema, migrations e seeds do Postgres
   evaluation/       avaliação de flags e experimentos, usada pela decisão e pelo SDK (do autor)
   sdk/              SDK TypeScript publicado no npm (@lever/sdk)
+  service-kit/      código Fastify compartilhado pelos serviços: auth por API key, erros, logger, health e métricas HTTP
   config/           tsconfig, eslint e prettier compartilhados
 data/
   spark/            (fase 2) Python — jobs PySpark da silver

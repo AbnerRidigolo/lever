@@ -14,6 +14,13 @@ scrape_configs:
     static_configs:
       - targets: ['host.docker.internal:4000']
 
+  # services/collector running on the host (pnpm --filter @lever/collector dev or start).
+  # Change the port here if you change COLLECTOR_PORT.
+  - job_name: collector
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['host.docker.internal:4100']
+
   # apps/store running on the host (pnpm --filter @lever/store dev or start): SDK metrics of
   # spec 001 section 10 (store plan, D8).
   - job_name: store
