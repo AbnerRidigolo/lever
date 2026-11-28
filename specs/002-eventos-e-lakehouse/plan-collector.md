@@ -272,6 +272,49 @@ Esta tarefa define em `buffer.ts` só a interface `RecordQueue { offer(records: 
 | NFR-001 (k6 do coletor)                                      | Fora: worktree `quality-002` |
 | Lado do SDK (US-1)                                           | Fora: worktree `sdk-events`  |
 
-## 5. Execução
+## 5. Execução (28/11/2026)
 
-A preencher na T7.
+Etapa concluída. Tarefas e commits:
+
+| Tarefa  | Commit                                                                                    |
+| ------- | ----------------------------------------------------------------------------------------- |
+| T1      | `af57052` refactor: extract shared service kit from the decision service                  |
+| T2      | `13b2fd2` feat(collector): scaffold service with health, metrics and telemetry            |
+| T3      | `50ba408` feat(collector): accept event batches on POST /v1/events                        |
+| T4      | `0d3ecbd` feat(collector): buffer accepted events and flush them to the bronze sink       |
+| T4      | `131f808` fix(collector): serialize flushes and make stop idempotent                      |
+| T5      | `f6693fa` feat(collector): write bronze objects to S3 and prove no loss against SeaweedFS |
+| T6      | `7505c06` docs(collector): document the collector and wire it into local infra            |
+| Final A | `034d20e` fix(collector): bound S3 writes with timeouts and harden the flush loop         |
+| Final B | `e0de2fb` test(collector): accept at-least-once duplicates in the no-loss test            |
+| Final C | `07ef5ed` docs(collector): state the real durability limits                               |
+
+Desvios em relação ao plano:
+
+- **`RecordQueue` definido na T2.** A interface que a rota usa para entregar os registros nasceu junto com o esqueleto, e o `EventBuffer` da T4 a implementa.
+- **Flusher ligado na T5.** O `main.ts` só passou a iniciar o `Flusher` e a gravar no S3 na T5, quando o sink real existiu.
+- **`413` com `code: bad_request`.** Não existe ainda um código de payload grande demais em `packages/schemas`; o coletor mantém o status `413` e usa `bad_request`.
+- **Rodada de correção na T4.** O `Flusher` ganhou exclusão mútua entre `tick` e `stop` (um flush por vez) e `stop` idempotente (`131f808`).
+- **T7 incorporada à rodada de correções finais.** A verificação final rodou depois dos commits A, B e C da revisão final.
+- **Decisão sobre as métricas da seção 11.** Foram acrescentados o histograma `lever_collector_request_batch_events`, o `type` real nos eventos rejeitados por `timestamp_out_of_range` (`unknown` só para `invalid_event`) e o `outcome="refused"` (`reason="buffer_full"`) para eventos recusados por buffer cheio.
+- **Correções da revisão final:**
+  - cada escrita no S3 tem limite de tempo (`COLLECTOR_SINK_WRITE_TIMEOUT_MS`, padrão 10 s), sem novas tentativas dentro do SDK; antes, uma conexão pela metade travava o flusher para sempre;
+  - o `tick` do flusher sempre reagenda e registra erros inesperados, e o `stop` limpa os timers em `finally`;
+  - o teste de ausência de perda aceita duplicatas (entrega pelo menos uma vez) e confirma que o flusher realmente enfrentou a queda;
+  - o README e a decisão D3 descrevem os limites reais de durabilidade.
+
+Resultados da verificação final:
+
+- `prettier --check` (arquivos versionados), `eslint .` na raiz, `lint`, `typecheck` e `test` do Turborepo: tudo passa. Testes: schemas 115, db 63, console 67, store 107, sdk 98, decision 66, service-kit 29, collector 54 (11 arquivos). Nesta máquina o `turbo` falha ao iniciar o pacote `@lever/service-kit` (`Exec format error`); para ele os mesmos `tsc`, `eslint` e `vitest` rodaram com `npx` dentro do pacote, e o restante com `npx turbo run lint typecheck test --filter='!@lever/service-kit'`.
+- Teste manual: `docker compose --profile lakehouse up -d --wait` e `docker compose up -d --wait postgres`; migrate e seed (`pnpm --filter @lever/db run db:migrate` e `db:seed`); key criada com `pnpm --filter @lever/decision api-key:create -- --env development --name collector`; coletor iniciado com `npx tsx --env-file-if-exists=../../.env src/main.ts`. Um `curl` com `timestamp` atual respondeu `202` com `{"accepted":1,"rejected":[]}`. Cerca de 3 s depois o bucket tinha `bronze/events_raw/environment_id=00000000-0000-4000-8000-000000000020/received_date=2026-11-28/20261128T152326834Z-<uuid>.ndjson.gz` (271 bytes, `Content-Encoding: gzip`), com uma linha NDJSON `{ event, receivedAt, environmentId, apiKeyId }`. O coletor foi encerrado com `SIGTERM` e nenhum volume foi apagado.
+
+O que fica de fora (menores adiados):
+
+- Backoff e buffer compartilhados entre ambientes, sem dead-letter por ambiente.
+- Buffer limitado por número de eventos, não por bytes.
+- O `503` é registrado em nível `error` pelo handler compartilhado.
+- O desligamento da telemetria pode correr contra o último flush.
+- O corpo é lido e analisado antes da autenticação.
+- Os padrões de credencial `LAKE_S3_*` valem para o ambiente local.
+- Os helpers de teste do Postgres estão duplicados em relação ao `decision`.
+- Código `payload_too_large` em `packages/schemas`, para uma tarefa futura.
