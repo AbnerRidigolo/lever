@@ -146,7 +146,9 @@ describe('POST /v1/events', () => {
       payload: JSON.stringify({ events: [trackEvent({ name: 'x'.repeat(MAX_BATCH_BYTES) })] }),
     });
     expect(response.statusCode).toBe(413);
-    expect(apiErrorSchema.parse(response.json()).error.message).toMatch(/.+/);
+    const { error } = apiErrorSchema.parse(response.json());
+    expect(error.code).toBe('bad_request');
+    expect(error.message).toMatch(/.+/);
   });
 
   it('the same eventId twice is accepted twice (deduplication is in the silver, FR-003)', async () => {

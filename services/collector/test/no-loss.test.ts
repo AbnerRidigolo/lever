@@ -7,7 +7,7 @@ import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 
 import { EventBuffer } from '../src/buffer.js';
 import { Flusher } from '../src/flusher.js';
-import { createMetrics } from '../src/metrics.js';
+import { createMetrics, type Metrics } from '../src/metrics.js';
 import { createS3Sink } from '../src/s3-sink.js';
 import {
   bearer,
@@ -34,6 +34,7 @@ let db: Database;
 let app: FastifyInstance;
 let flusher: Flusher;
 let buffer: EventBuffer;
+let metrics: Metrics;
 let environmentId: string;
 let apiKey: string;
 
@@ -44,7 +45,7 @@ beforeAll(async () => {
   environmentId = await seededEnvironmentId(db, 'production');
   apiKey = (await createApiKey(db, environmentId, 'production')).key;
 
-  const metrics = createMetrics();
+  metrics = createMetrics();
   buffer = new EventBuffer({ maxEvents: 10_000, gauge: metrics.bufferEvents });
   const sink = createS3Sink({
     endpoint: storage.endpoint,
@@ -98,6 +99,19 @@ describe('no event accepted with 202 is lost', () => {
     // Let the flusher try, and fail, a few times while the storage is down.
     await new Promise((resolve) => setTimeout(resolve, 1500));
     expect(buffer.size()).toBeGreaterThan(0);
+    // The flusher really hit the outage (otherwise this test would prove nothing).
+    const failures = await metrics.registry.getSingleMetricAsString(
+      'lever_collector_sink_failures_total',
+    );
+    expect(
+      Number(
+        failures
+          .split('\n')
+          .find((l) => l.startsWith('lever_collector_sink_failures_total '))
+          ?.split(' ')
+          .pop(),
+      ),
+    ).toBeGreaterThan(0);
 
     await storage.start();
     await retry(() => {
@@ -118,9 +132,11 @@ describe('no event accepted with 202 is lost', () => {
         .map((line) => bronzeEventRecordSchema.parse(JSON.parse(line)).event.eventId),
     );
 
-    expect(stored).toHaveLength(100);
+    // The proof of no loss: every accepted id is stored.
     expect(new Set(stored)).toEqual(new Set(ids));
-    // The flusher must never re-write a committed record.
-    expect(new Set(stored).size).toBe(stored.length);
+    // At-least-once (FR-003, ADR-007), so duplicates are valid: a PUT that was in flight when the
+    // storage stopped may have been stored while its response was lost, and the flusher then
+    // retries it. The silver layer deduplicates by eventId; the collector never does.
+    expect(stored.length).toBeGreaterThanOrEqual(100);
   }, 240_000);
 });
