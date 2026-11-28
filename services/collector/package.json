@@ -13,6 +13,7 @@
     "test": "vitest run --coverage"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "3.1168.0",
     "@fastify/otel": "0.21.2",
     "@lever/db": "workspace:*",
     "@lever/schemas": "workspace:*",
@@ -35,6 +36,7 @@
     "@vitest/coverage-v8": "5.0.5",
     "drizzle-orm": "0.45.4",
     "eslint": "10.12.0",
+    "testcontainers": "12.2.1",
     "tsx": "4.23.15",
     "typescript": "6.0.3",
     "vitest": "5.0.5"
