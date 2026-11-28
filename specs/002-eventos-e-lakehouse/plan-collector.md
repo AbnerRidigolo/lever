@@ -6,7 +6,7 @@
 | ---------- | ------------------------------------------------------------------------------------------------------ |
 | Spec       | `specs/002-eventos-e-lakehouse/spec.md` (aprovada em 27/11/2026)                                       |
 | Etapa      | `collector` (seção 12, ordem 1)                                                                        |
-| Status     | Rascunho (27/11/2026), aguardando aprovação do autor, principalmente das decisões D1 a D6              |
+| Status     | Aprovado pelo autor em 28/11/2026 (D1 a D6 aceitas; execução por subagentes)                           |
 | Escopo     | `services/collector`, mais o que a D1 decidir sobre o código compartilhado com `services/decision`     |
 | Depende de | `base-002` mesclada (AbnerRidigolo/lever#14): contratos de eventos, `.env.example` e o lakehouse local |
 
