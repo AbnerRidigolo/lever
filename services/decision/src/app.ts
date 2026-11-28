@@ -1,13 +1,15 @@
 import { STREAM_PING_INTERVAL_MS } from '@lever/schemas';
+import {
+  healthRoutes,
+  metricsPlugin,
+  registerErrorHandlers,
+  type ApiKeyStore,
+} from '@lever/service-kit';
 import Fastify, { type FastifyBaseLogger, type FastifyInstance } from 'fastify';
 
-import type { ApiKeyStore } from './auth/api-key-store.js';
 import type { ConfigStore } from './config/config-store.js';
-import { registerErrorHandlers } from './errors.js';
 import type { Evaluator } from './evaluator.js';
 import { createMetrics, type Metrics } from './metrics.js';
-import { healthRoutes } from './routes/health.js';
-import { metricsPlugin } from './routes/metrics.js';
 import { v1Routes } from './routes/v1.js';
 
 export interface AppDeps {

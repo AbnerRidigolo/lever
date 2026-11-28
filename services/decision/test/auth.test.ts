@@ -1,12 +1,17 @@
 import { apiKeys, generateApiKey, hashApiKey } from '@lever/db';
 import { apiErrorSchema } from '@lever/schemas';
+import {
+  ApiKeyStore,
+  authOf,
+  createDbApiKeySource,
+  registerErrorHandlers,
+  requireApiKey,
+  type ApiKeySource,
+} from '@lever/service-kit';
 import { eq } from 'drizzle-orm';
 import Fastify from 'fastify';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { authOf, requireApiKey } from '../src/auth/api-key-auth.js';
-import { ApiKeyStore, createDbApiKeySource, type ApiKeySource } from '../src/auth/api-key-store.js';
-import { registerErrorHandlers } from '../src/errors.js';
 import {
   bearer,
   createApiKey,

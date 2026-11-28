@@ -2,8 +2,8 @@ import { apiKeys, environments, type Database } from '@lever/db';
 import { eq } from 'drizzle-orm';
 import type { FastifyBaseLogger } from 'fastify';
 
-import { HttpError } from '../errors.js';
-import { withTimeout } from '../timeout.js';
+import { HttpError } from './errors.js';
+import { withTimeout } from './timeout.js';
 
 /** The environment an API key gives access to. */
 export interface AuthenticatedKey {

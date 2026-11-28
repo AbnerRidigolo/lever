@@ -18,6 +18,7 @@
     "@lever/db": "workspace:*",
     "@lever/evaluation": "workspace:*",
     "@lever/schemas": "workspace:*",
+    "@lever/service-kit": "workspace:*",
     "@opentelemetry/api": "1.9.1",
     "@opentelemetry/exporter-trace-otlp-http": "0.223.0",
     "@opentelemetry/instrumentation-http": "0.223.0",

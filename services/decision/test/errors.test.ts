@@ -1,8 +1,8 @@
 import { apiErrorSchema } from '@lever/schemas';
+import { HttpError } from '@lever/service-kit';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
-import { HttpError } from '../src/errors.js';
 import { createTestApp, useTestDb } from './helpers.js';
 
 const { app } = createTestApp(useTestDb());

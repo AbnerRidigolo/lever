@@ -6,9 +6,9 @@ import {
   type FlagValue,
   type SegmentConfig,
 } from '@lever/schemas';
+import { authOf } from '@lever/service-kit';
 import type { FastifyPluginAsync } from 'fastify';
 
-import { authOf } from '../auth/api-key-auth.js';
 import type { ConfigStore } from '../config/config-store.js';
 import type { Evaluator } from '../evaluator.js';
 

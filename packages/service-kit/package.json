@@ -1,0 +1,39 @@
+{
+  "name": "@lever/service-kit",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Code shared by the Lever Fastify services: API key auth, errors, logger, health and HTTP metrics",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@lever/db": "workspace:*",
+    "@lever/schemas": "workspace:*",
+    "drizzle-orm": "0.45.4",
+    "fastify": "5.12.7",
+    "fastify-plugin": "6.0.1",
+    "pino": "10.3.1",
+    "prom-client": "15.1.3",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@lever/config": "workspace:*",
+    "@types/node": "24.19.2",
+    "eslint": "10.12.0",
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
+  }
+}

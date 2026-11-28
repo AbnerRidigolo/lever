@@ -10,13 +10,13 @@ import {
   type Database,
 } from '@lever/db';
 import type { EnvironmentKey } from '@lever/schemas';
+import { ApiKeyStore, createDbApiKeySource } from '@lever/service-kit';
 import { and, eq, max } from 'drizzle-orm';
 import type { FastifyBaseLogger, FastifyInstance } from 'fastify';
 import { pino } from 'pino';
 import { afterAll, inject } from 'vitest';
 
 import { buildApp, type AppDeps } from '../src/app.js';
-import { ApiKeyStore, createDbApiKeySource } from '../src/auth/api-key-store.js';
 import { ConfigStore } from '../src/config/config-store.js';
 import { loadEnvironmentConfig } from '../src/config/load-config.js';
 import type { Evaluator } from '../src/evaluator.js';

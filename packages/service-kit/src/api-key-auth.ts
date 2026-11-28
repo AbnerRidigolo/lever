@@ -1,7 +1,7 @@
 import { hashApiKey, isApiKeyFormat } from '@lever/db';
 import type { FastifyRequest, preHandlerAsyncHookHandler } from 'fastify';
 
-import { HttpError } from '../errors.js';
+import { HttpError } from './errors.js';
 import type { ApiKeyStore, AuthenticatedKey } from './api-key-store.js';
 
 declare module 'fastify' {

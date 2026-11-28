@@ -1,7 +1,6 @@
 import type { EnvironmentConfig } from '@lever/schemas';
+import { HttpError } from '@lever/service-kit';
 import type { FastifyBaseLogger } from 'fastify';
-
-import { HttpError } from '../errors.js';
 
 export type ConfigLoader = (environmentId: string) => Promise<EnvironmentConfig | null>;
 

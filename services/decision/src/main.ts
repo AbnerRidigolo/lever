@@ -1,17 +1,15 @@
 import { createDb } from '@lever/db';
+import { ApiKeyStore, createDbApiKeySource, createLogger, withTimeout } from '@lever/service-kit';
 
 import { buildApp } from './app.js';
-import { ApiKeyStore, createDbApiKeySource } from './auth/api-key-store.js';
 import { listenForConfigChanges, type ConfigChangeListener } from './config/config-listener.js';
 import { ConfigStore } from './config/config-store.js';
 import { loadEnvironmentConfig } from './config/load-config.js';
 import { loadDecisionEnv } from './env.js';
 import { authorEvaluator } from './evaluator.js';
-import { createLogger } from './logger.js';
-import { withTimeout } from './timeout.js';
 
 const env = loadDecisionEnv();
-const logger = createLogger(env.LOG_LEVEL);
+const logger = createLogger('lever-decision', env.LOG_LEVEL);
 const database = createDb(env.DATABASE_URL);
 
 const apiKeys = new ApiKeyStore({

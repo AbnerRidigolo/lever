@@ -1,7 +1,6 @@
+import { requireApiKey, type ApiKeyStore } from '@lever/service-kit';
 import type { FastifyPluginAsync } from 'fastify';
 
-import { requireApiKey } from '../auth/api-key-auth.js';
-import type { ApiKeyStore } from '../auth/api-key-store.js';
 import type { ConfigStore } from '../config/config-store.js';
 import type { Evaluator } from '../evaluator.js';
 import { configRoutes } from './config.js';

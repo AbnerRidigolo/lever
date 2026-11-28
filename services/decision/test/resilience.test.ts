@@ -1,17 +1,16 @@
 import { createDb, runMigrations, seed } from '@lever/db';
 import { environmentConfigSchema } from '@lever/schemas';
+import { ApiKeyStore, createDbApiKeySource, withTimeout } from '@lever/service-kit';
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { buildApp } from '../src/app.js';
-import { ApiKeyStore, createDbApiKeySource } from '../src/auth/api-key-store.js';
 import {
   listenForConfigChanges,
   type ConfigChangeListener,
 } from '../src/config/config-listener.js';
 import { ConfigStore } from '../src/config/config-store.js';
 import { loadEnvironmentConfig } from '../src/config/load-config.js';
-import { withTimeout } from '../src/timeout.js';
 import {
   bearer,
   createApiKey,

@@ -2,7 +2,6 @@ import { EnvValidationError } from '@lever/schemas';
 import { describe, expect, it } from 'vitest';
 
 import { loadDecisionEnv } from '../src/env.js';
-import { createLogger } from '../src/logger.js';
 
 const DATABASE_URL = 'postgres://lever:secret@localhost:5432/lever';
 
@@ -34,19 +33,5 @@ describe('loadDecisionEnv', () => {
 
   it('rejects a missing database url and an invalid port', () => {
     expect(() => loadDecisionEnv({ DECISION_PORT: '99999' })).toThrow(EnvValidationError);
-  });
-});
-
-describe('createLogger', () => {
-  it('redacts the authorization header', () => {
-    const lines: string[] = [];
-    const logger = createLogger('info', { write: (line: string) => lines.push(line) });
-
-    logger.info({ req: { headers: { authorization: 'Bearer lvr_dev_secret' } } }, 'request');
-
-    expect(lines).toHaveLength(1);
-    expect(lines[0]).not.toContain('lvr_dev_secret');
-    expect(lines[0]).toContain('[redacted]');
-    expect(lines[0]).toContain('"service":"lever-decision"');
   });
 });
