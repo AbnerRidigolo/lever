@@ -33,6 +33,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   app.register(eventsRoutes, {
     apiKeys: deps.apiKeys,
     queue: deps.queue,
+    metrics,
     now: deps.now ?? (() => new Date()),
   });
 

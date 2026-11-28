@@ -29,10 +29,11 @@
   },
   "devDependencies": {
     "@lever/config": "workspace:*",
+    "@opentelemetry/sdk-trace-base": "2.12.0",
     "@testcontainers/postgresql": "12.2.1",
-    "drizzle-orm": "0.45.4",
     "@types/node": "24.19.2",
     "@vitest/coverage-v8": "5.0.5",
+    "drizzle-orm": "0.45.4",
     "eslint": "10.12.0",
     "tsx": "4.23.15",
     "typescript": "6.0.3",

@@ -4,10 +4,12 @@ import type { FastifyError, FastifyPluginCallback } from 'fastify';
 
 import type { RecordQueue } from '../buffer.js';
 import { ingestBatch } from '../ingest.js';
+import type { Metrics } from '../metrics.js';
 
 export interface EventsRouteOptions {
   apiKeys: ApiKeyStore;
   queue: RecordQueue;
+  metrics: Pick<Metrics, 'events'>;
   now: () => Date;
 }
 
@@ -37,6 +39,19 @@ export const eventsRoutes: FastifyPluginCallback<EventsRouteOptions> = (app, opt
       if (records.length > 0 && !options.queue.offer(records)) {
         void reply.header('retry-after', String(RETRY_AFTER_SECONDS));
         throw new HttpError('service_unavailable', 'Event buffer is full, retry shortly');
+      }
+
+      // Counted only after the queue took the batch, so a refused (503) batch is not "accepted".
+      for (const record of records) {
+        options.metrics.events.inc({ type: record.event.type, outcome: 'accepted' });
+      }
+      // A rejected event has no trustworthy type, so the label stays bounded.
+      for (const rejection of rejected) {
+        options.metrics.events.inc({
+          type: 'unknown',
+          outcome: 'rejected',
+          reason: rejection.code,
+        });
       }
 
       void reply.status(202);
