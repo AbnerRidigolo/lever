@@ -47,6 +47,7 @@ export class Flusher {
   private consecutiveFailures = 0;
   private started = false;
   private stopping = false;
+  private stopPromise: Promise<{ unflushed: number }> | undefined;
 
   constructor(private readonly options: FlusherOptions) {
     this.backoff = options.backoff ?? DEFAULT_BACKOFF;
@@ -68,18 +69,26 @@ export class Flusher {
    * Stops the loop and tries to write what is buffered for up to `timeoutMs`. Returns how many
    * records could not be written; logs one error line with that count when it is not zero.
    */
-  async stop(timeoutMs: number): Promise<{ unflushed: number }> {
+  stop(timeoutMs: number): Promise<{ unflushed: number }> {
+    // Idempotent: SIGTERM and SIGINT may both call it; later calls share the first one's result.
+    this.stopPromise ??= this.doStop(timeoutMs);
+    return this.stopPromise;
+  }
+
+  private async doStop(timeoutMs: number): Promise<{ unflushed: number }> {
     this.stopping = true;
     this.clearTimer();
 
     let abandoned = false;
+    const isAbandoned = (): boolean => abandoned;
     let sleepTimer: NodeJS.Timeout | undefined;
     let deadlineTimer: NodeJS.Timeout | undefined;
     const buffer = this.options.buffer;
 
     const drain = async (): Promise<void> => {
       while (!abandoned && buffer.size() > 0) {
-        if (await this.run()) continue;
+        if (await this.run(isAbandoned)) continue;
+        if (isAbandoned()) break;
         await new Promise<void>((resolve) => {
           sleepTimer = setTimeout(resolve, this.retryDelayMs());
         });
@@ -116,7 +125,7 @@ export class Flusher {
 
   private async tick(): Promise<void> {
     this.timer = undefined;
-    await this.run();
+    await this.run(() => this.stopping);
     if (this.consecutiveFailures > 0) this.schedule(this.retryDelayMs());
     else this.schedule(this.anyEnvironmentFull() ? 0 : this.options.intervalMs);
   }
@@ -138,16 +147,19 @@ export class Flusher {
     return Math.min(maxMs, initialMs * 2 ** exponent) * this.jitter();
   }
 
-  /** One flush at a time: waits for a running one, then flushes. True when every write worked. */
-  private async run(): Promise<boolean> {
-    if (this.current !== undefined) await this.current;
-    const flush = this.flushOnce();
-    this.current = flush;
-    try {
-      return await flush;
-    } finally {
+  /**
+   * One flush at a time: waits until none is running, then flushes. Two callers that waited on the
+   * same flush must not both start the next one, so the wait is a loop. `cancelled` is checked
+   * after the wait, because a stop may have returned meanwhile. True when every write worked.
+   */
+  private async run(cancelled: () => boolean): Promise<boolean> {
+    while (this.current !== undefined) await this.current;
+    if (cancelled()) return true;
+    const flush: Promise<boolean> = this.flushOnce().finally(() => {
       if (this.current === flush) this.current = undefined;
-    }
+    });
+    this.current = flush;
+    return flush;
   }
 
   private async flushOnce(): Promise<boolean> {

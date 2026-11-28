@@ -242,4 +242,79 @@ describe('Flusher', () => {
     expect(await metricValue('lever_collector_sink_write_duration_seconds_count')).toBe(1);
     await flusher.stop(100);
   });
+
+  describe('concurrency', () => {
+    /** Makes the next sink write wait until `release()` is called. */
+    function gateNextWrite(): { release: () => void } {
+      let release: () => void = () => undefined;
+      const gate = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      const original = sink.write.bind(sink);
+      let gated = false;
+      sink.write = async (environmentId, records) => {
+        if (!gated) {
+          gated = true;
+          await gate;
+        }
+        return original(environmentId, records);
+      };
+      return { release };
+    }
+
+    it('two concurrent stops while a slow write is in flight write every record exactly once', async () => {
+      const { buffer, flusher } = setup();
+      buffer.offer([record(ENV_A, 'a1'), record(ENV_A, 'a2')]);
+      const slow = gateNextWrite();
+      flusher.start();
+      await vi.advanceTimersByTimeAsync(1000);
+
+      // Accepted while the first flush is in flight.
+      buffer.offer([record(ENV_A, 'a3'), record(ENV_A, 'a4')]);
+      const first = flusher.stop(5000);
+      const second = flusher.stop(5000);
+      slow.release();
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(await first).toEqual({ unflushed: 0 });
+      expect(await second).toEqual({ unflushed: 0 });
+      expect(sink.written(ENV_A)).toEqual(['a1', 'a2', 'a3', 'a4']);
+      expect(buffer.size()).toBe(0);
+    });
+
+    it('records offered during an in-flight write are kept and written once', async () => {
+      const { buffer, flusher } = setup();
+      buffer.offer([record(ENV_A, 'a1')]);
+      const slow = gateNextWrite();
+      flusher.start();
+      await vi.advanceTimersByTimeAsync(1000);
+      buffer.offer([record(ENV_A, 'a2')]);
+      expect(buffer.size()).toBe(2);
+      slow.release();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(buffer.size()).toBe(1);
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(sink.written(ENV_A)).toEqual(['a1', 'a2']);
+      expect(buffer.size()).toBe(0);
+      await flusher.stop(100);
+    });
+
+    it('does not write after stop returned, even if the hung write settles later', async () => {
+      const { buffer, flusher } = setup();
+      buffer.offer([record(ENV_A, 'a1')]);
+      const slow = gateNextWrite();
+      flusher.start();
+      await vi.advanceTimersByTimeAsync(1000);
+      buffer.offer([record(ENV_A, 'a2')]);
+      const stopped = flusher.stop(100);
+      await vi.advanceTimersByTimeAsync(100);
+      expect(await stopped).toEqual({ unflushed: 2 });
+
+      const attempts = sink.attempts;
+      slow.release();
+      await vi.advanceTimersByTimeAsync(5000);
+      // Only the write that was already in flight completes; nothing new starts.
+      expect(sink.attempts).toBe(attempts + 1);
+    });
+  });
 });
