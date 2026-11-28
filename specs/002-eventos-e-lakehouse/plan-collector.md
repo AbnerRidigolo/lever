@@ -62,7 +62,9 @@
 
 - **D3 — Durabilidade do buffer.** O 002/AC-2.6 pede um buffer limitado e "nenhum evento aceito com 202 se perde" quando o armazenamento cai e volta.
 
-  **Proposta:** buffer em memória. Ele cobre esse cenário e o desligamento normal (T4). Se o processo morrer de forma abrupta (`kill -9`, falta de memória), os eventos no buffer se perdem, no máximo um intervalo de envio. Isso fica registrado no README como limite conhecido. Um spool em disco ou o Firehose (fase 5) resolve depois.
+  **Proposta:** buffer em memória. Ele cobre esse cenário (S3 que cai e volta com o coletor de pé) e o desligamento normal com o S3 saudável (T4). Isso fica registrado no README como limite conhecido. Um spool em disco ou o Firehose (fase 5) resolve depois.
+
+  _Corrigido na revisão final:_ a decisão continua, mas a descrição dos limites estava otimista. Com o S3 saudável, uma queda abrupta (`kill -9`, falta de memória) perde no máximo cerca de um intervalo de envio. Durante uma queda (ou travamento) do S3, uma queda abrupta perde tudo o que está no buffer, até `COLLECTOR_BUFFER_MAX_EVENTS`. Um desligamento normal com o S3 fora do ar ou lento perde o que não foi gravado depois de `COLLECTOR_SHUTDOWN_FLUSH_MS` (o número vai para o log).
 
   A alternativa é gravar no disco antes de responder 202, com mais código e mais latência (NFR-001: p99 abaixo de 50 ms).
 
