@@ -71,4 +71,40 @@ describe('POST /v1/events with a bounded buffer', () => {
     expect(text).not.toContain('outcome="accepted"');
     await app.close();
   });
+
+  it('counts events refused by a full buffer with outcome refused and reason buffer_full', async () => {
+    const buffer = new EventBuffer({ maxEvents: 1 });
+    const { app, metrics, post } = appWith(buffer);
+    expect((await post(2)).statusCode).toBe(503);
+    const text = await metrics.registry.getSingleMetricAsString('lever_collector_events_total');
+    expect(text).toContain(
+      'lever_collector_events_total{type="track",outcome="refused",reason="buffer_full"} 2',
+    );
+    await app.close();
+  });
+
+  it('observes the events per request, including refused batches', async () => {
+    const buffer = new EventBuffer({ maxEvents: 4 });
+    const { app, metrics, post } = appWith(buffer);
+    expect((await post(2, [{}])).statusCode).toBe(202);
+    expect((await post(5)).statusCode).toBe(503);
+    const text = await metrics.registry.getSingleMetricAsString(
+      'lever_collector_request_batch_events',
+    );
+    expect(text).toContain('lever_collector_request_batch_events_count 2');
+    expect(text).toContain('lever_collector_request_batch_events_sum 8');
+    await app.close();
+  });
+
+  it('labels a timestamp_out_of_range rejection with the parsed event type', async () => {
+    const buffer = new EventBuffer({ maxEvents: 100 });
+    const { app, metrics, post } = appWith(buffer);
+    const stale = trackEvent({ timestamp: new Date(Date.now() - 8 * 86_400_000).toISOString() });
+    expect((await post(0, [stale])).statusCode).toBe(202);
+    const text = await metrics.registry.getSingleMetricAsString('lever_collector_events_total');
+    expect(text).toContain(
+      'lever_collector_events_total{type="track",outcome="rejected",reason="timestamp_out_of_range"} 1',
+    );
+    await app.close();
+  });
 });

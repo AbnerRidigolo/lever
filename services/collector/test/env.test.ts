@@ -22,6 +22,7 @@ describe('loadCollectorEnv', () => {
       COLLECTOR_FLUSH_MAX_EVENTS: 5000,
       COLLECTOR_BUFFER_MAX_EVENTS: 100_000,
       COLLECTOR_SHUTDOWN_FLUSH_MS: 10_000,
+      COLLECTOR_SINK_WRITE_TIMEOUT_MS: 10_000,
       OTEL_SERVICE_NAME: 'lever-collector',
     });
   });

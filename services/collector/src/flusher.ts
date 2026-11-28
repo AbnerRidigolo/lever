@@ -99,11 +99,15 @@ export class Flusher {
       const deadline = new Promise<void>((resolve) => {
         deadlineTimer = setTimeout(resolve, timeoutMs);
       });
-      await Promise.race([drain(), deadline]);
+      try {
+        await Promise.race([drain(), deadline]);
+      } finally {
+        abandoned = true;
+        clearTimeout(sleepTimer);
+        clearTimeout(deadlineTimer);
+      }
     }
     abandoned = true;
-    clearTimeout(sleepTimer);
-    clearTimeout(deadlineTimer);
 
     const unflushed = buffer.size();
     if (unflushed > 0) {
@@ -125,9 +129,26 @@ export class Flusher {
 
   private async tick(): Promise<void> {
     this.timer = undefined;
-    await this.run(() => this.stopping);
-    if (this.consecutiveFailures > 0) this.schedule(this.retryDelayMs());
-    else this.schedule(this.anyEnvironmentFull() ? 0 : this.options.intervalMs);
+    try {
+      await this.run(() => this.stopping);
+    } catch (error) {
+      // flushOnce handles sink errors itself; anything else must not stop the loop.
+      this.consecutiveFailures += 1;
+      this.options.logger.error({ err: error }, 'unexpected error in the flush loop');
+    } finally {
+      // Always reschedule (schedule is a no-op once stopping).
+      this.schedule(this.nextDelayMs());
+    }
+  }
+
+  private nextDelayMs(): number {
+    if (this.consecutiveFailures > 0) return this.retryDelayMs();
+    try {
+      return this.anyEnvironmentFull() ? 0 : this.options.intervalMs;
+    } catch (error) {
+      this.options.logger.error({ err: error }, 'unexpected error in the flush loop');
+      return this.options.intervalMs;
+    }
   }
 
   /** Flushes at once when an environment is full, unless the sink is failing or a flush runs. */

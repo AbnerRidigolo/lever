@@ -299,6 +299,25 @@ describe('Flusher', () => {
       await flusher.stop(100);
     });
 
+    it('keeps ticking and logs when an unexpected error escapes a flush', async () => {
+      const { buffer, flusher, lines } = setup();
+      buffer.offer([record(ENV_A, 'a1')]);
+      const original = buffer.pendingEnvironments.bind(buffer);
+      let calls = 0;
+      vi.spyOn(buffer, 'pendingEnvironments').mockImplementation(() => {
+        calls += 1;
+        if (calls === 2) throw new Error('boom');
+        return original();
+      });
+      flusher.start();
+
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(lines.some((line) => line.msg === 'unexpected error in the flush loop')).toBe(true);
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(sink.written(ENV_A)).toEqual(['a1']);
+      await flusher.stop(100);
+    });
+
     it('does not write after stop returned, even if the hung write settles later', async () => {
       const { buffer, flusher } = setup();
       buffer.offer([record(ENV_A, 'a1')]);

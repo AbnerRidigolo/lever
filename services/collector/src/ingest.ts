@@ -13,6 +13,8 @@ export type EventRejection = EventBatchResponse['rejected'][number];
 export interface IngestResult {
   records: BronzeEventRecord[];
   rejected: EventRejection[];
+  /** Event `type` of each rejection, aligned with `rejected`; `unknown` when the event did not parse. */
+  rejectedTypes: string[];
 }
 
 /**
@@ -37,6 +39,7 @@ export function ingestBatch(body: unknown, auth: AuthenticatedKey, receivedAt: D
   const receivedAtIso = receivedAt.toISOString();
   const records: BronzeEventRecord[] = [];
   const rejected: EventRejection[] = [];
+  const rejectedTypes: string[] = [];
 
   batch.data.events.forEach((candidate, index) => {
     const parsed = collectorEventSchema.safeParse(candidate);
@@ -49,6 +52,7 @@ export function ingestBatch(body: unknown, auth: AuthenticatedKey, receivedAt: D
         code: 'invalid_event',
         message: `${where}${issue?.message ?? 'invalid event'}`,
       });
+      rejectedTypes.push('unknown');
       return;
     }
 
@@ -62,6 +66,7 @@ export function ingestBatch(body: unknown, auth: AuthenticatedKey, receivedAt: D
         code: 'timestamp_out_of_range',
         message: 'timestamp must be at most 5 minutes ahead and at most 7 days old',
       });
+      rejectedTypes.push(parsed.data.type);
       return;
     }
 
@@ -73,5 +78,5 @@ export function ingestBatch(body: unknown, auth: AuthenticatedKey, receivedAt: D
     });
   });
 
-  return { records, rejected };
+  return { records, rejected, rejectedTypes };
 }

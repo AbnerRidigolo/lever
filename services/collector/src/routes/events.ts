@@ -9,7 +9,7 @@ import type { Metrics } from '../metrics.js';
 export interface EventsRouteOptions {
   apiKeys: ApiKeyStore;
   queue: RecordQueue;
-  metrics: Pick<Metrics, 'events'>;
+  metrics: Pick<Metrics, 'events' | 'requestBatchEvents'>;
   now: () => Date;
 }
 
@@ -34,9 +34,21 @@ export const eventsRoutes: FastifyPluginCallback<EventsRouteOptions> = (app, opt
     '/v1/events',
     { bodyLimit: MAX_BATCH_BYTES, preHandler: requireApiKey(options.apiKeys) },
     async (request, reply): Promise<EventBatchResponse> => {
-      const { records, rejected } = ingestBatch(request.body, authOf(request), options.now());
+      const { records, rejected, rejectedTypes } = ingestBatch(
+        request.body,
+        authOf(request),
+        options.now(),
+      );
+      options.metrics.requestBatchEvents.observe(records.length + rejected.length);
 
       if (records.length > 0 && !options.queue.offer(records)) {
+        for (const record of records) {
+          options.metrics.events.inc({
+            type: record.event.type,
+            outcome: 'refused',
+            reason: 'buffer_full',
+          });
+        }
         void reply.header('retry-after', String(RETRY_AFTER_SECONDS));
         throw new HttpError('service_unavailable', 'Event buffer is full, retry shortly');
       }
@@ -45,14 +57,15 @@ export const eventsRoutes: FastifyPluginCallback<EventsRouteOptions> = (app, opt
       for (const record of records) {
         options.metrics.events.inc({ type: record.event.type, outcome: 'accepted' });
       }
-      // A rejected event has no trustworthy type, so the label stays bounded.
-      for (const rejection of rejected) {
+      // The type label is the schema's own enum, or `unknown` for an event that did not parse, so
+      // it stays bounded.
+      rejected.forEach((rejection, position) => {
         options.metrics.events.inc({
-          type: 'unknown',
+          type: rejectedTypes[position] ?? 'unknown',
           outcome: 'rejected',
           reason: rejection.code,
         });
-      }
+      });
 
       void reply.status(202);
       return { accepted: records.length, rejected };

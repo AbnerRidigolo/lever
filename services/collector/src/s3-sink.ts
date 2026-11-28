@@ -17,11 +17,17 @@ export interface S3SinkOptions {
   bucket: string;
   /** Path-style addressing; required for SeaweedFS (no bucket subdomains). */
   forcePathStyle: boolean;
+  /**
+   * Upper bound for one object write (connect, send and response together). Without it a
+   * half-open connection never settles and the flusher would wait forever (default 10 s).
+   */
+  writeTimeoutMs?: number;
   /** Clock for the object-name timestamp; injectable for tests. */
   now?: () => Date;
 }
 
 const KEY_PREFIX = 'bronze/events_raw';
+const DEFAULT_WRITE_TIMEOUT_MS = 10_000;
 
 /** `20261127T100001123Z`: sortable, UTC, milliseconds, no characters that need escaping. */
 function compactTimestamp(date: Date): string {
@@ -41,11 +47,20 @@ function compactTimestamp(date: Date): string {
  */
 export function createS3Sink(options: S3SinkOptions): BronzeSink {
   const now = options.now ?? (() => new Date());
+  const writeTimeoutMs = options.writeTimeoutMs ?? DEFAULT_WRITE_TIMEOUT_MS;
   const client = new S3Client({
     endpoint: options.endpoint,
     region: options.region,
     forcePathStyle: options.forcePathStyle,
     credentials: { accessKeyId: options.accessKeyId, secretAccessKey: options.secretAccessKey },
+    // One attempt, bounded: the flusher owns retries (with backoff), so the SDK must not retry
+    // inside its own, unbounded loop.
+    maxAttempts: 1,
+    requestHandler: {
+      connectionTimeout: writeTimeoutMs,
+      requestTimeout: writeTimeoutMs,
+      throwOnRequestTimeout: true,
+    },
   });
 
   async function putObject(
@@ -66,6 +81,8 @@ export function createS3Sink(options: S3SinkOptions): BronzeSink {
         ContentType: 'application/x-ndjson',
         ContentEncoding: 'gzip',
       }),
+      // Covers the whole attempt, including a connection that stays half-open.
+      { abortSignal: AbortSignal.timeout(writeTimeoutMs) },
     );
   }
 

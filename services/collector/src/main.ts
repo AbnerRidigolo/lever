@@ -30,6 +30,7 @@ const sink = createS3Sink({
   secretAccessKey: env.LAKE_S3_SECRET_KEY,
   bucket: env.LAKE_BUCKET,
   forcePathStyle: true,
+  writeTimeoutMs: env.COLLECTOR_SINK_WRITE_TIMEOUT_MS,
 });
 const flusher = new Flusher({
   buffer,

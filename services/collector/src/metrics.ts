@@ -2,8 +2,13 @@ import { createHttpMetrics, type HttpMetrics } from '@lever/service-kit';
 import { Counter, Gauge, Histogram, Registry } from 'prom-client';
 
 export interface Metrics extends HttpMetrics {
-  /** Events by `type` and `outcome` (`accepted` or `rejected`); `reason` only on rejections. */
+  /**
+   * Events by `type` and `outcome` (`accepted`, `rejected` or `refused`); `reason` on the last two
+   * (`refused` is a valid event the full buffer did not take: reason `buffer_full`).
+   */
   events: Counter<'type' | 'outcome' | 'reason'>;
+  /** Events per incoming POST: every authenticated, well-formed batch, accepted or refused. */
+  requestBatchEvents: Histogram;
   /** Records per sink write. */
   batchEvents: Histogram;
   /** Records waiting in the buffer. */
@@ -23,8 +28,14 @@ export function createMetrics(): Metrics {
     ...http,
     events: new Counter({
       name: `${PREFIX}events_total`,
-      help: 'Events by type and outcome (accepted or rejected, with the rejection reason)',
+      help: 'Events by type and outcome (accepted, rejected or refused, with the reason)',
       labelNames: ['type', 'outcome', 'reason'] as const,
+      registers: [registry],
+    }),
+    requestBatchEvents: new Histogram({
+      name: `${PREFIX}request_batch_events`,
+      help: 'Events per incoming POST /v1/events (well-formed batches of an authenticated key)',
+      buckets: [1, 5, 10, 50, 100, 250, 500],
       registers: [registry],
     }),
     batchEvents: new Histogram({

@@ -22,6 +22,8 @@ export const collectorEnvSchema = z.object({
   COLLECTOR_FLUSH_MAX_EVENTS: positiveInt(5000),
   COLLECTOR_BUFFER_MAX_EVENTS: positiveInt(100_000),
   COLLECTOR_SHUTDOWN_FLUSH_MS: positiveInt(10_000),
+  /** Upper bound for one write to the lake; a hung connection is abandoned and retried. */
+  COLLECTOR_SINK_WRITE_TIMEOUT_MS: positiveInt(10_000),
   /** Traces are exported only when this is set. */
   OTEL_EXPORTER_OTLP_ENDPOINT: z.url().optional(),
   OTEL_SERVICE_NAME: z.string().min(1).default('lever-collector'),
